@@ -3,6 +3,10 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll } from "vitest";
 
+import { queryClient } from "~/core/query/queryClient";
+import { useToastStore } from "~/core/ui";
+import { useForgotPasswordFlow, useRegisterFlow } from "~/features/auth/flows";
+
 import { server } from "./msw/server";
 
 // A request no handler knows is a bug in the test, not something to let through.
@@ -12,6 +16,10 @@ afterEach(() => {
   cleanup();
   server.resetHandlers();
   window.localStorage.clear();
+  queryClient.clear();
+  useRegisterFlow.getState().reset();
+  useForgotPasswordFlow.getState().reset();
+  useToastStore.setState({ toasts: [] });
 });
 
 afterAll(() => server.close());

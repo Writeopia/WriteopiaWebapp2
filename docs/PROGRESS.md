@@ -19,6 +19,88 @@ Entry template:
 
 ---
 
+## 2026-11-15 — M1 (part 2) — Auth and workspaces
+
+Implements `docs/plan/03-auth-and-workspaces.md`. M1 is complete except for the e2e test.
+
+**Done**
+
+- Account endpoints (`features/auth/api.ts`) and workspace endpoints (`features/workspaces/api.ts`).
+- Session: the signed-in user in the query cache, the selected workspace id in `localStorage`,
+  the start decision and the route guards.
+- Screens: login, sign-up in three steps (email, code, details with username check, password
+  strength and the legal texts), email confirmation, forgotten password in three steps, password
+  change while signed in, choice and creation of a workspace, account-deletion notice, logout.
+- `/app` is guarded and shows a placeholder with the user, the workspace and the logout.
+- Shared query cache moved out of `root.tsx` (`core/query/queryClient.ts`) so the loaders can
+  read it; `core/storage.ts` for browser preferences.
+- The foundation demo page (`routes/home.tsx`) is gone.
+
+**Decisions**
+
+- Login goes to `/` and lets the start logic choose between the app and the workspace choice.
+- After confirming an email the user signs in again; the password is not kept in memory for it.
+- Passwords must be strong (8 characters and a special character) everywhere one is set.
+- An unreachable backend shows an error with Retry; it is never taken for a signed-out user.
+
+**Verified**
+
+- `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test` (130 passed) and `pnpm build`
+  pass locally. The tests drive every screen against the mocked backend, including the failure
+  branches.
+- In Chrome against `pnpm dev` with no backend running: the login, sign-up and forgotten-password
+  screens render; signing in shows the "could not reach the server" message; `/` and `/app` show
+  the error screen with Retry.
+- Not verified: no flow has run against a real backend, so the cookie session, the real response
+  bodies and the status codes are still as read from the Kotlin code. No e2e test yet.
+
+**Next**
+
+- Run the auth flows against a backend (local docker or a deployed one) and fix what differs.
+- M2 — `docs/plan/04-shell-and-document-menu.md`.
+
+---
+
+## 2026-11-15 — M1 (part 1) — API client and data models
+
+Implements `docs/plan/02-api-and-data.md`.
+
+**Done**
+
+- `app/core/rank`: port of `Rank.kt` (fractional positions), with the Kotlin tests.
+- `app/core/models`: Zod schemas and types for steps, documents, folders, tags, workspaces and
+  users; story type, tag and span constants; ARGB colour helpers.
+- `app/core/api`: the HTTP client — same-origin `/api`, cookies included, JSON and multipart
+  bodies, typed errors, timeout and cancellation, and one shared session renewal on 401
+  followed by a retry.
+- `test/fixtures` and `test/msw`: builders, two real documents from the other apps, default
+  handlers and a signed-in set.
+
+**Decisions**
+
+- Parsed models are complete objects (missing fields get their defaults, nullable fields are
+  `null`), so a parsed step can be sent back unchanged.
+- Legacy numeric positions are converted to ranks on read, like `RankSerializer`.
+- `document.content` is sorted by position on read.
+- When the session cannot be renewed the client calls the `onSessionExpired` listeners; the
+  redirect to the login screen is wired in the auth work.
+- Request and response schemas of individual endpoints are written with each feature, not here.
+
+**Verified**
+
+- `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test` (73 passed) and `pnpm build`
+  pass locally.
+- The models parse two documents written by the desktop app.
+- Not verified: nothing here has talked to a real backend yet. The multipart upload is tested
+  at the `fetch` call only, because jsdom's `FormData` cannot go through Node's `fetch`.
+
+**Next**
+
+- `docs/plan/03-auth-and-workspaces.md`: session store, guards, login, register, forgot
+  password, choose workspace.
+
+---
+
 ## 2026-11-15 — M0 — Foundation
 
 **Done**

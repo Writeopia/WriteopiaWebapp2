@@ -110,18 +110,48 @@ to your email when ready." Reference: `ExportWorkspaceDialog.kt`.
   username taken, forgot-password flow, workspace list/create/error.
 - e2e: register → login → choose workspace (against a dev backend).
 
+## What was built
+
+| Where                            | Contents                                                                                                                                       |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/features/auth/api.ts`       | The account endpoints; `login` answers one of four outcomes instead of throwing                                                                |
+| `app/features/auth/session.ts`   | `loadSessionUser`, `setSessionUser`, `clearSession`, `decideStart`, the guards (`requireSession`, `requireWorkspace`, `guestOnly`) and `paths` |
+| `app/features/auth/password.ts`  | Password strength and username rules                                                                                                           |
+| `app/features/auth/flows.ts`     | In-memory state handed between the steps of sign-up and of a forgotten password                                                                |
+| `app/features/auth/components/`  | `AuthCard`, `CodeForm`, `NewPasswordFields`, `PasswordStrength`, `LegalDocumentDialog`                                                         |
+| `app/features/workspaces/api.ts` | List and create workspaces; the selected workspace id in `localStorage`                                                                        |
+| `app/routes/`                    | `start`, `auth/*`, `workspaces`, `account-deletion-started`, `app/layout` + a placeholder `app/home`                                           |
+| `app/core/query/queryClient.ts`  | The shared query cache, read by the loaders                                                                                                    |
+
+Differences from the description above:
+
+- After a successful login the app goes to `/`, and the start logic sends it on: straight to the
+  app when this browser already has a workspace selected that still exists, otherwise to the
+  choice of a workspace.
+- After confirming an email the user is sent to the login, with a toast; the password is not kept
+  around to sign in for them.
+- Sign-up fetches the Terms at submit time and sends their `version`, as `RegisterViewModel.kt`
+  does, and requires a strong password and a username that is not taken.
+- A password change (forgotten or signed in) requires a strong password typed twice.
+- A session that expires and cannot be renewed clears the cache and goes to the login
+  (`onSessionExpired` in `root.tsx`).
+- When the backend cannot be reached at the start, the app shows an error with Retry instead of
+  the login.
+
 ## Tasks
 
-- [ ] `features/auth/api.ts`, `features/workspaces/api.ts`
-- [ ] Session store + `requireSession` / `requireWorkspace` / `guestOnly` loaders
-- [ ] Start screen logic
-- [ ] Login screen
-- [ ] Register: email, code, details (username check, strength indicator, legal dialogs)
-- [ ] Email confirmation screen
-- [ ] Forgot password: email, code, new password
-- [ ] Reset password screen
-- [ ] Logout
-- [ ] Account-deletion-started screen
-- [ ] Choose workspace + create workspace dialog
-- [ ] Auth layout (logo, theme-aware background)
-- [ ] Tests as listed
+- [x] `features/auth/api.ts`, `features/workspaces/api.ts`
+- [x] Session store + `requireSession` / `requireWorkspace` / `guestOnly` loaders
+- [x] Start screen logic
+- [x] Login screen
+- [x] Register: email, code, details (username check, strength indicator, legal dialogs)
+- [x] Email confirmation screen
+- [x] Forgot password: email, code, new password
+- [x] Reset password screen
+- [x] Logout
+- [x] Account-deletion-started screen
+- [x] Choose workspace + create workspace dialog
+- [x] Auth layout (logo, theme-aware background)
+- [x] Unit and component tests as listed
+- [ ] e2e: register → login → choose workspace against a dev backend (needs a running backend)
+- [ ] Export workspace (M7, in Settings)

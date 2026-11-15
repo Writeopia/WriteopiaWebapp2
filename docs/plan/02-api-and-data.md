@@ -232,7 +232,7 @@ All paths are prefixed with `/api`. `{ws}` = workspace id.
 | POST         | `/{ws}/document/{id}/move`                         | `{targetParentId}`                                                                                                                                     |
 | POST         | `/{ws}/document/{id}/favorite`                     | `{favorite}`                                                                                                                                           |
 | GET          | `/{ws}/user/favorites`                             | → `string[]` (document ids)                                                                                                                            |
-| GET          | `/{ws}/document/search`                            | → `{documents, presentations}` (query parameter: confirm in `SearchApi.kt`)                                                                            |
+| GET          | `/{ws}/document/search`                            | → `{documents, presentations}` (`?q=<text>`)                                                                                                           |
 | POST         | `/{ws}/document/{id}/publish` · `/unpublish`       |                                                                                                                                                        |
 | GET          | `/{ws}/document/{id}/published`                    | → `{published}`                                                                                                                                        |
 | POST         | `/{ws}/document/{id}/link-card/describe`           | `{storyStep, position, requestTimestamp}` → `{storyStep?, error?}`                                                                                     |
@@ -289,19 +289,43 @@ consecutive failures and surface an error. Also flush on `visibilitychange`/`pag
 
 ## To verify while implementing
 
-These were inferred from names and call sites rather than read end to end:
+Resolved while implementing this document:
 
-- The id used for the root folder in `folder/{folderId}/contents` (see `OnlyBackendChooseNoteKmpViewModel.kt`).
-- Query parameter names of `/document/search` (`SearchApi.kt`).
-- Response shape of `/ai/status`.
+- The root folder id is `root` (`Folder.ROOT_PATH`); exported as `ROOT_FOLDER_ID`.
+- `/document/search` takes the query as `?q=` (`SearchApi.kt`).
+- `/ai/status` answers `{available}`, and 403 `{error}` for FREE tier users.
+- The backend leaves out fields that hold their default value (see the fixture documents), so
+  every optional field is parsed with its default.
+
+Still inferred from names and call sites rather than read end to end:
+
 - Which fields `POST /document` requires when updating metadata only (the sync service sends
   documents `withoutContent()`).
-- Which endpoints return 403 for FREE tier users (`requirePremiumUserId`).
+- Which other endpoints return 403 for FREE tier users (`requirePremiumUserId`).
+- Whether `FolderApi.createdAt` / `lastUpdatedAt` arrive as numbers or ISO text; the schema
+  accepts both.
+
+## What was built
+
+| Module            | Contents                                                                                                                                                              |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/core/rank`   | `rankAt`, `rankAfter`, `rankBefore`, `rankBetween`, `ranksBetween`, `isRank`, `RANK_FIRST`; jitter switch in `rankConfig`                                             |
+| `app/core/models` | Zod schemas and types (`schemas.ts`), `StoryTypes` / `Tags` / `Spans` constants (`storyTypes.ts`), ARGB helpers (`color.ts`)                                          |
+| `app/core/api`    | `api.get/post/put/delete/send`, `apiRequest` (raw response, for streams), `apiUrl`, `renewSession`, `onSessionExpired`, `ApiError` / `NetworkError` / `ApiParseError` |
+| `test/fixtures`   | Builders (`aUser`, `aWorkspace`, `aDocument`, `aStep`, `aFolder`) and two documents written by the other apps                                                         |
+| `test/msw`        | Default handlers (signed out) and `signedIn(user)`                                                                                                                    |
+
+Conventions for the feature modules that follow:
+
+- Paths are given without the `/api` prefix: `api.get("/auth/user/current", userSchema)`.
+- Requests about the session itself (login, refresh, logout, register) pass
+  `renewSession: false`, so their 401 is read as their answer.
+- AI calls pass `timeoutMs: AI_TIMEOUT_MS`.
 
 ## Tasks
 
-- [ ] `core/api/client.ts` with credentials, error mapping, single-flight refresh + retry
-- [ ] Zod schemas and types for all wire models; ARGB colour helpers
-- [ ] `core/rank` port with tests
-- [ ] MSW handlers + fixtures (reuse `Writeopia/notes_example.json` and `writeopia_documents/*.json`)
-- [ ] Endpoint modules per feature, added as each feature lands
+- [x] `core/api/client.ts` with credentials, error mapping, single-flight refresh + retry
+- [x] Zod schemas and types for the core wire models; ARGB colour helpers
+- [x] `core/rank` port with tests
+- [x] MSW handlers + fixtures (reuse `Writeopia/notes_example.json` and `writeopia_documents/*.json`)
+- [ ] Endpoint modules and their request/response schemas, added as each feature lands

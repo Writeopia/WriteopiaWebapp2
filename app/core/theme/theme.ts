@@ -4,6 +4,8 @@
  * localStorage, per browser.
  */
 
+export { readPreference, writePreference } from "~/core/storage";
+
 export const COLOR_THEMES = ["light", "dark", "system"] as const;
 export type ColorTheme = (typeof COLOR_THEMES)[number];
 export type ResolvedTheme = "light" | "dark";
@@ -37,23 +39,6 @@ export function systemIsDark(): boolean {
     typeof window.matchMedia === "function" &&
     window.matchMedia("(prefers-color-scheme: dark)").matches
   );
-}
-
-/** Reads a preference; storage can be unavailable (private mode, blocked site data). */
-export function readPreference(key: string): string | null {
-  try {
-    return window.localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-export function writePreference(key: string, value: string): void {
-  try {
-    window.localStorage.setItem(key, value);
-  } catch {
-    // The choice still applies to this page; it just is not remembered.
-  }
 }
 
 export function applyTheme(colorTheme: ColorTheme, accentColor: AccentColor): void {

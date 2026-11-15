@@ -44,15 +44,22 @@ app/
   routes.ts       route table
   routes/         route modules
   core/
+    api/          HTTP client and session renewal
+    models/       wire models (Zod schemas)
+    rank/         positions of the steps of a document
+    query/        the shared query cache
     theme/        color theme and accent color
     i18n/         strings
     ui/           shared components
+  features/
+    auth/         account endpoints, session, guards
+    workspaces/   workspace endpoints, selected workspace
 test/
   setup.ts        test environment
+  render.tsx      draws a screen inside a router and the providers
+  fixtures/       data builders and documents from the other apps
   msw/            mocked backend for tests
 ```
-
-Features are added under `app/features/<name>/` as described in the plan.
 
 ## Deploy
 

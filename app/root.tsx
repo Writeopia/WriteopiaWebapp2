@@ -1,7 +1,7 @@
 import "./app.css";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { type ReactNode, useState } from "react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { type ReactNode, useEffect } from "react";
 import {
   isRouteErrorResponse,
   Links,
@@ -9,12 +9,16 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useNavigate,
 } from "react-router";
 
+import { ApiError, NetworkError, onSessionExpired } from "~/core/api";
 import { t } from "~/core/i18n";
+import { queryClient } from "~/core/query/queryClient";
 import { themeInitScript } from "~/core/theme/theme";
 import { useSystemThemeSync } from "~/core/theme/useTheme";
-import { Spinner, Toaster } from "~/core/ui";
+import { Button, Spinner, Toaster } from "~/core/ui";
+import { clearSession, paths } from "~/features/auth/session";
 
 import type { Route } from "./+types/root";
 
@@ -48,14 +52,18 @@ export function Layout({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
-  // The backend is the source of truth: lists are refetched when the user comes back to the tab.
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: true, retry: 1 } },
-      }),
-  );
+  const navigate = useNavigate();
   useSystemThemeSync();
+
+  // A session that expired and could not be renewed: back to the login.
+  useEffect(
+    () =>
+      onSessionExpired(() => {
+        clearSession();
+        void navigate(paths.login, { replace: true });
+      }),
+    [navigate],
+  );
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -76,13 +84,19 @@ export function HydrateFallback() {
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   const notFound = isRouteErrorResponse(error) && error.status === 404;
+  // The backend did not answer, or answered that it is in trouble: worth trying again.
+  const unreachable =
+    error instanceof NetworkError || (error instanceof ApiError && error.status >= 500);
 
   if (!notFound) console.error(error);
 
   return (
-    <main className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
+    <main className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
       <h1 className="text-2xl font-bold">{t("errorTitle")}</h1>
-      <p className="text-text-light">{notFound ? t("errorNotFound") : t("errorUnexpected")}</p>
+      <p className="text-text-light">
+        {notFound ? t("errorNotFound") : unreachable ? t("errorServer") : t("errorUnexpected")}
+      </p>
+      {!notFound && <Button onClick={() => window.location.reload()}>{t("retry")}</Button>}
     </main>
   );
 }
