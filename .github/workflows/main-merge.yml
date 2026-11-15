@@ -1,0 +1,68 @@
+name: Main merge
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web_build_and_publish:
+    name: Web - Build and Publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      # The bucket the app is published to. Until the repository variable is set, the job
+      # checks and builds the app and skips the deploy.
+      GCS_BUCKET: ${{ vars.GCS_BUCKET }}
+      # The load balancer whose CDN cache holds index.html.
+      CDN_URL_MAP: ${{ vars.CDN_URL_MAP }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Test
+        run: pnpm test
+      - name: Build Web App (Production)
+        run: pnpm build
+      - name: Authenticate to Google Cloud
+        if: env.GCS_BUCKET != ''
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: "projects/640912732949/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider"
+          service_account: "github-actions-deployer@writeopia.iam.gserviceaccount.com"
+      - name: Set up Cloud SDK
+        if: env.GCS_BUCKET != ''
+        uses: google-github-actions/setup-gcloud@v3
+      # The files in assets/ have their content hash in the name, so they are cached for good
+      # and uploaded first: index.html never points at a file that is not there yet. Old
+      # assets are kept, for the tabs still running the previous release.
+      - name: Deploy to Cloud Storage
+        if: env.GCS_BUCKET != ''
+        run: |
+          gsutil -m -h "Cache-Control:public,max-age=31536000,immutable" rsync -r build/client/assets "gs://$GCS_BUCKET/assets"
+          gsutil -m rsync -r -d -x '^assets/' build/client "gs://$GCS_BUCKET"
+          gsutil setmeta -h "Cache-Control:no-cache" "gs://$GCS_BUCKET/index.html"
+      # index.html is the only file whose name does not change between releases.
+      - name: Invalidate Cloud CDN cache
+        if: env.GCS_BUCKET != '' && env.CDN_URL_MAP != ''
+        run: |
+          gcloud compute url-maps invalidate-cdn-cache "$CDN_URL_MAP" --path "/index.html" --async

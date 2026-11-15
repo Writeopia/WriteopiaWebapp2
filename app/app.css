@@ -1,0 +1,119 @@
+@import "tailwindcss";
+@import "@fontsource/roboto/400.css";
+@import "@fontsource/roboto/500.css";
+@import "@fontsource/roboto/700.css";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+ * Design tokens, ported from Writeopia/application/core/theme (Theme.kt, AccentColor.kt,
+ * Shape.kt). The theme is chosen by data-theme on <html> and the accent by data-accent; both
+ * are set before first paint by the script in root.tsx.
+ */
+:root {
+  color-scheme: light;
+
+  --wr-global-bg: #f8f0f9;
+  --wr-light-bg: #f1f1f1;
+  --wr-on-bg: #363636;
+  --wr-text-light: #444444;
+  --wr-text-lighter: #666666;
+  --wr-highlight: #e0e0e0;
+  --wr-card-border: #d9d2da;
+  --wr-divider: #dfdfdf;
+  --wr-link: #0000ff;
+  --wr-options-selector: #00000022;
+  /* Compose takes these two from the Material 3 scheme; these are the closest fixed values. */
+  --wr-card-bg: #ffffff;
+  --wr-error: #b3261e;
+
+  --wr-accent: #b7409a;
+  --wr-accent-secondary: #e987d0;
+  --wr-on-accent: #ffffff;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --wr-global-bg: #252525;
+  --wr-light-bg: #222222;
+  --wr-on-bg: #ffffff;
+  --wr-text-light: #dfdfdf;
+  --wr-text-lighter: #aaaaaa;
+  --wr-highlight: #616161;
+  --wr-card-border: #3a3a3a;
+  --wr-divider: #333333;
+  --wr-link: #42a5f5;
+  --wr-options-selector: #ffffff22;
+  --wr-card-bg: #2e2e2e;
+  --wr-error: #f2b8b5;
+}
+
+/* Stated, not only the default, so a swatch can show an accent other than the page's. */
+[data-accent="purple"] {
+  --wr-accent: #b7409a;
+  --wr-accent-secondary: #e987d0;
+}
+
+[data-accent="blue"] {
+  --wr-accent: #2196f3;
+  --wr-accent-secondary: #64b5f6;
+}
+
+[data-accent="green"] {
+  --wr-accent: #4caf50;
+  --wr-accent-secondary: #81c784;
+}
+
+[data-accent="orange"] {
+  --wr-accent: #ff9800;
+  --wr-accent-secondary: #ffb74d;
+}
+
+@theme inline {
+  --color-global-bg: var(--wr-global-bg);
+  --color-light-bg: var(--wr-light-bg);
+  --color-on-bg: var(--wr-on-bg);
+  --color-text-light: var(--wr-text-light);
+  --color-text-lighter: var(--wr-text-lighter);
+  --color-highlight: var(--wr-highlight);
+  --color-card-bg: var(--wr-card-bg);
+  --color-card-border: var(--wr-card-border);
+  --color-divider: var(--wr-divider);
+  --color-link: var(--wr-link);
+  --color-options-selector: var(--wr-options-selector);
+  --color-error: var(--wr-error);
+  --color-accent: var(--wr-accent);
+  --color-accent-secondary: var(--wr-accent-secondary);
+  --color-on-accent: var(--wr-on-accent);
+  --color-selected-bg: color-mix(in srgb, var(--wr-accent) 15%, transparent);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 12px;
+
+  --font-sans: "Roboto", ui-sans-serif, system-ui, sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--wr-global-bg);
+  color: var(--wr-on-bg);
+  font-family: var(--font-sans);
+  font-size: 16px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--wr-accent);
+  outline-offset: 2px;
+}
+
+@keyframes wr-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
