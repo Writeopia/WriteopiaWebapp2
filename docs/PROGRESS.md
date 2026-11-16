@@ -19,6 +19,49 @@ Entry template:
 
 ---
 
+## 2026-11-16 — M2 — App shell and document menu
+
+Implements `docs/plan/04-shell-and-document-menu.md`, except import / export (M7).
+
+**Done**
+
+- Shell: side menu (workspace, Search, Home, Favorites, Documents graph, Settings, folder tree,
+  tags), resizable by its edge, collapsible, a drawer on narrow screens.
+- Folder tree: lazy, with icons, and per folder: new document, new folder, edit, favorite, move,
+  delete; folders and documents can be dragged, folders and Home take drops.
+- Document menu for a folder, the favorites and a tag: breadcrumb, cards with previews, grid /
+  staggered grid / list, sorting, skeletons, empty, error and premium states.
+- Create document and folder, edit folder (name and icon), icon picker, favorite, duplicate,
+  delete with confirmation, move by dialog or drag-and-drop with Undo.
+- Selection (checkbox, modifier click, drag box) and its bar: favorite, duplicate, move,
+  summarize with AI, delete.
+- Settings dialog (`?settings=`) with the account and the theme; Search dialog (`?search=`) empty.
+- `lucide-react` added: the Compose app draws the same icon set.
+
+**Decisions**
+
+- Summary with AI was built now (it is one request); import / export stays in M7.
+- Every change is optimistic over all cached lists and the whole menu is refetched after it.
+- The tag view reads the whole workspace, because the backend cannot list by tag.
+- `/app/document/:id` and `/app/graph` are placeholders until M3 and M8.
+
+**Verified**
+
+- `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test` (212 passed) and `pnpm build`
+  pass locally.
+- In Chrome against `pnpm dev` and a throwaway mock of the API: the three arrangements, the card
+  menu, the selection bar, the move dialog, the settings dialog, the list at phone width, and a
+  drop of a card on a folder (events sent by script) with its Undo toast. No console errors.
+- Not verified: nothing has run against a real backend. A drag with a real mouse, the drag box
+  and the drawer were not exercised in the browser.
+
+**Next**
+
+- Run auth and the menu against a backend and fix what differs.
+- M3 — `docs/plan/05-editor.md`.
+
+---
+
 ## 2026-11-15 — M1 (part 2) — Auth and workspaces
 
 Implements `docs/plan/03-auth-and-workspaces.md`. M1 is complete except for the e2e test.

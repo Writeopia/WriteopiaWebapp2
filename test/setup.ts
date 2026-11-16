@@ -6,6 +6,10 @@ import { afterAll, afterEach, beforeAll } from "vitest";
 import { queryClient } from "~/core/query/queryClient";
 import { useToastStore } from "~/core/ui";
 import { useForgotPasswordFlow, useRegisterFlow } from "~/features/auth/flows";
+import { useMenuDialogs } from "~/features/menu/dialogs";
+import { useDragStore } from "~/features/menu/dnd";
+import { useMenuPreferences } from "~/features/menu/preferences";
+import { useShellStore } from "~/features/shell/store";
 
 import { server } from "./msw/server";
 
@@ -20,6 +24,10 @@ afterEach(() => {
   useRegisterFlow.getState().reset();
   useForgotPasswordFlow.getState().reset();
   useToastStore.setState({ toasts: [] });
+  useMenuDialogs.getState().close();
+  useDragStore.getState().end();
+  useMenuPreferences.getState().reload();
+  useShellStore.getState().reload();
 });
 
 afterAll(() => server.close());

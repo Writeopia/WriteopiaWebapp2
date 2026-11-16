@@ -54,6 +54,8 @@ app/
   features/
     auth/         account endpoints, session, guards
     workspaces/   workspace endpoints, selected workspace
+    shell/        side menu, folder tree, top bar
+    menu/         document menu: folders, cards, selection, moving
 test/
   setup.ts        test environment
   render.tsx      draws a screen inside a router and the providers

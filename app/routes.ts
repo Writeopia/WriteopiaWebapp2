@@ -18,5 +18,12 @@ export default [
   route("workspaces", "routes/workspaces.tsx"),
   route("account-deletion-started", "routes/account-deletion-started.tsx"),
 
-  route("app", "routes/app/layout.tsx", [index("routes/app/home.tsx")]),
+  route("app", "routes/app/layout.tsx", [
+    index("routes/app/index.tsx"),
+    route("folder/:folderId", "routes/app/folder.tsx"),
+    route("favorites", "routes/app/favorites.tsx"),
+    route("tag/:tagId", "routes/app/tag.tsx"),
+    route("document/:documentId", "routes/app/document.tsx"),
+    route("graph", "routes/app/graph.tsx"),
+  ]),
 ] satisfies RouteConfig;

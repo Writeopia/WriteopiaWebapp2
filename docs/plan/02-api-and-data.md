@@ -297,11 +297,14 @@ Resolved while implementing this document:
 - The backend leaves out fields that hold their default value (see the fixture documents), so
   every optional field is parsed with its default.
 
+- `POST /document` with `content: []` changes only the document's own fields: stored steps
+  that are not sent are left alone, and the tag links are replaced by `tagIds`.
+- Every `/docs/workspace/...` endpoint answers 403 to FREE tier users (`requirePremiumUserId`).
+- `GET /folder/{id}/path` answers 404 for the root folder; `PUT /folder/{id}` cannot remove an
+  icon; create answers 201 with the folder, clone 201 with the copies.
+
 Still inferred from names and call sites rather than read end to end:
 
-- Which fields `POST /document` requires when updating metadata only (the sync service sends
-  documents `withoutContent()`).
-- Which other endpoints return 403 for FREE tier users (`requirePremiumUserId`).
 - Whether `FolderApi.createdAt` / `lastUpdatedAt` arrive as numbers or ISO text; the schema
   accepts both.
 

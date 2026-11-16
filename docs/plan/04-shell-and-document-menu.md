@@ -142,18 +142,43 @@ skeleton cards while loading.
 
 ## Tasks
 
-- [ ] Shell layout, resizable/collapsible side menu, mobile drawer
-- [ ] Side menu items and workspace header
-- [ ] Folder tree with lazy loading
-- [ ] Folder route: breadcrumb, cards, skeletons, empty/error states
-- [ ] Preview renderers for document cards
-- [ ] Display modes (list / grid / staggered) with persistence
-- [ ] Sorting with persistence
-- [ ] New document, new folder dialog
-- [ ] Icon picker (shared with the editor)
-- [ ] Item actions: rename, icon, favorite, duplicate, delete
-- [ ] Selection + bulk actions bar
-- [ ] Move dialog, drag-and-drop move, undo snackbar
-- [ ] Favorites and tag views
-- [ ] Summary with AI (M6)
+- [x] Shell layout, resizable/collapsible side menu, mobile drawer
+- [x] Side menu items and workspace header
+- [x] Folder tree with lazy loading
+- [x] Folder route: breadcrumb, cards, skeletons, empty/error states
+- [x] Preview renderers for document cards
+- [x] Display modes (list / grid / staggered) with persistence
+- [x] Sorting with persistence
+- [x] New document, new folder dialog
+- [x] Icon picker (shared with the editor)
+- [x] Item actions: rename, icon, favorite, duplicate, delete
+- [x] Selection + bulk actions bar
+- [x] Move dialog, drag-and-drop move, undo snackbar
+- [x] Favorites and tag views
+- [x] Summary with AI (M6)
 - [ ] Import / export (M7)
+
+## What was built
+
+| Module                    | Contents                                                                                                                                          |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/features/menu`       | Endpoints (`api.ts`), queries and optimistic changes (`queries.ts`, `cache.ts`), sorting, selection, drag-and-drop, icon table, cards and dialogs |
+| `app/features/shell`      | `AppShell` (side menu, resize, drawer), `SideMenu`, `FolderTree`, `TopBar`, the Settings dialog (account and appearance only)                     |
+| `app/features/workspaces` | `WorkspaceProvider` / `useWorkspace`: the user and the workspace for every screen under `/app`                                                    |
+| `test/msw/menuBackend.ts` | An in-memory backend for the menu endpoints                                                                                                       |
+
+Notes for the milestones that follow:
+
+- **Favorites** lists documents only: `GET /user/favorites` gives ids and each document is then
+  fetched. The backend has no list of favorite folders.
+- **Tag view**: the backend has no "documents of a tag" endpoint, so the view reads every folder
+  of the workspace (6 at a time, at most 500 folders) and filters. An endpoint would be better.
+- **Changing a document's icon** sends the document to `POST /document` with `content: []`. The
+  backend leaves stored steps alone when they are not sent (`insertDocumentWithContent`).
+- **A folder's icon cannot be removed**: `PUT /folder/{id}` keeps the old icon when none is sent.
+- **Every documents endpoint answers 403 to FREE users** (`requirePremiumUserId`); the menu then
+  shows the premium message instead of an error with Retry.
+- The summary request always sends `ignoreSyncCheck: true`, like the Compose web app.
+- `/app/document/:id` and `/app/graph` are placeholders; `?search=1` opens a dialog with no
+  search in it yet (M4). The Settings dialog has the account and appearance sections only (M7).
+- Ids of new documents are UUIDs (`core/id.ts`), not the 10 characters of `GenerateId.kt`.
