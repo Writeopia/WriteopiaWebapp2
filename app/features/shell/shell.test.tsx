@@ -294,6 +294,7 @@ describe("the shell", () => {
     const dialog = screen.getByRole("dialog", { name: "Settings" });
     expect(within(dialog).getByText(/Account: Ana - PREMIUM/)).toBeInTheDocument();
 
+    await userEvent.click(within(dialog).getByRole("button", { name: "Appearance" }));
     await userEvent.click(within(dialog).getByRole("radio", { name: "Dark" }));
     expect(document.documentElement.dataset.theme).toBe("dark");
     await userEvent.click(within(dialog).getByRole("radio", { name: "Green" }));

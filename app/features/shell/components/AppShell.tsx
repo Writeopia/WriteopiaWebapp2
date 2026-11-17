@@ -3,9 +3,9 @@ import { useLocation, useSearchParams } from "react-router";
 
 import { t } from "~/core/i18n";
 import { Button, Dialog } from "~/core/ui";
+import { SettingsDialog } from "~/features/settings/components/SettingsDialog";
 
 import { SIDE_MENU_MAX_WIDTH, SIDE_MENU_MIN_WIDTH, useShellStore } from "../store";
-import { SettingsDialog } from "./SettingsDialog";
 import { SideMenu } from "./SideMenu";
 
 const KEYBOARD_STEP = 16;

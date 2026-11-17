@@ -1,7 +1,10 @@
 import { defineConfig } from "vitest/config";
 
+import { buildInfoDefines } from "./buildInfo";
+
 // Separate from vite.config.ts: the React Router plugin is for the app build, not for tests.
 export default defineConfig({
+  define: buildInfoDefines(),
   resolve: {
     alias: { "~": new URL("./app", import.meta.url).pathname },
   },

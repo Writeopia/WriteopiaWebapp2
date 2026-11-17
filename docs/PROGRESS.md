@@ -19,6 +19,53 @@ Entry template:
 
 ---
 
+## 2026-11-17 — M7 — Settings
+
+Implements `docs/plan/08-settings.md`. Import / export files (also listed under M7) are not part
+of it and stay open.
+
+**Done**
+
+- `app/features/settings`: the settings dialog moved out of the shell and grew a section list
+  (Account, Appearance, AI, Workspace, Teams) with the version and commit at the bottom. The
+  place is in `?settings=`; moving inside the dialog replaces the entry, so Back closes it.
+- Account: name and tier, change workspace, reset password, logout with a "Signing out…"
+  overlay, export of a chosen workspace, delete account gated on typing the email (then
+  `/account-deletion-started`).
+- Appearance: theme and accent, as before.
+- AI: Cloud AI with its hint; usage with compact numbers, progress bar, percentage, loading,
+  "no usage data" and failure with Retry.
+- Workspace: name; header images (grid, delete with confirmation, empty / failed / retry); tag
+  catalogue (create, edit, delete as `deleted: true`, unique name ignoring case).
+- Teams: the user's workspaces with role; members 20 at a time; add user (debounced username
+  search, 5 results, role, 409 / 404 / other); edit role (409 = last admin).
+- `Dialog` takes `size="lg"`; `buildInfo.ts` defines `VITE_APP_VERSION` and `VITE_COMMIT_SHA`
+  for Vite and Vitest; `renderRoute` takes a `search`.
+
+**Decisions**
+
+- See "What was built" in `docs/plan/08-settings.md`: the workspace name stays read-only, Teams
+  opens the members of any of the user's workspaces, members load with "Load more".
+
+**Verified**
+
+- `eslint app test`, `prettier --check .`, `tsc --noEmit` (outside `e2e/`), `vitest run` (516
+  passed, 35 of them new in `settings.test.tsx`) and `react-router build` pass. The built app
+  carries the commit SHA.
+- pnpm was not on the PATH of this machine: the tools ran from `node_modules/.bin`. That
+  install has no `@playwright/test`, so `e2e/` and `playwright.config.ts` fail lint and types and
+  `pnpm test:e2e` was not run. Those failures were there before this change.
+- Not verified: nothing ran in a browser or against a real backend.
+
+**Next**
+
+- Run the settings against a backend: the export (admins only, 202), the delete-account saga,
+  user search results, the header-image delete route.
+- Import / export files (M7 leftover).
+- M8 — `docs/plan/09-extras.md`.
+
+---
+
 ## 2026-11-17 — M6 — AI
 
 Implements `docs/plan/07-ai.md`, except the model picker, equations and presentations (M8).

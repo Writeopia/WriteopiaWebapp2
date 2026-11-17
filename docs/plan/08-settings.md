@@ -79,14 +79,38 @@ SHA.
 
 ## Tasks
 
-- [ ] Settings dialog shell and routing
-- [ ] Account section
-- [ ] Export workspace dialog
-- [ ] Delete account flow
-- [ ] Appearance section (theme, accent)
-- [ ] AI section (provider hint, usage)
-- [ ] Workspace section: header images sub-page
-- [ ] Workspace section: tags sub-page
-- [ ] Teams: workspaces, members list (paginated)
-- [ ] Teams: add user (search, role), edit role
-- [ ] Version footer
+- [x] Settings dialog shell and routing
+- [x] Account section
+- [x] Export workspace dialog
+- [x] Delete account flow
+- [x] Appearance section (theme, accent)
+- [x] AI section (provider hint, usage)
+- [x] Workspace section: header images sub-page
+- [x] Workspace section: tags sub-page
+- [x] Teams: workspaces, members list (paginated)
+- [x] Teams: add user (search, role), edit role
+- [x] Version footer
+
+## What was built
+
+| Module (`app/features/settings/`) | Contents                                                                                                                                 |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `sections.ts`                     | `?settings=<section>[/<page>...]`: parse, write, and move inside the dialog (replace)                                                    |
+| `api.ts`                          | Export, delete account, header images with ids and their delete, members, user search, add, role                                         |
+| `components/SettingsDialog.tsx`   | Section list, the section, the version footer (`VITE_APP_VERSION`, `VITE_COMMIT_SHA`)                                                    |
+| `components/*Section.tsx`         | Account (+ export and delete-account dialogs), Appearance, AI, Workspace (+ header images, tags), Teams (+ members, add user, edit role) |
+
+Pages in the address: `workspace/header-images`, `workspace/tags`, `teams/<workspaceId>`,
+`teams/<workspaceId>/add`, `teams/<workspaceId>/user/<userId>`.
+
+Differences from the plan above:
+
+- **Workspace name** is shown, not editable. The endpoint exists (`PUT /api/workspace/name`,
+  admins only, `{ workspaceId, newName }`) but the Compose app does not expose it either.
+- **Teams** follows `SettingsTeamsScreen.kt`: the list of the user's workspaces opens the members
+  of any of them, not only the current one. Adding users and changing roles show only where the
+  user is an admin; elsewhere "Only admins can add users".
+- **Members** load 20 at a time with a "Load more" button instead of loading on scroll.
+- **AI**: only "Cloud AI" is offered (README decision 3). The usage is read for every user; a
+  FREE user gets the failure with Retry.
+- The commit comes from `GITHUB_SHA` in CI, from `git` locally, or reads "dev" (`buildInfo.ts`).
