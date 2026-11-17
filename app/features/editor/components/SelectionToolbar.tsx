@@ -1,4 +1,4 @@
-import { Bold, Highlighter, Italic, Link, Underline } from "lucide-react";
+import { Bold, Highlighter, Italic, Link, Sparkles, Underline } from "lucide-react";
 import { type ReactNode, type RefObject, useLayoutEffect, useState } from "react";
 
 import { t } from "~/core/i18n";
@@ -28,12 +28,13 @@ const HIGHLIGHT_COLORS: {
 export function SelectionToolbar({ canvas }: { canvas: RefObject<HTMLDivElement | null> }) {
   const state = useEditor((store) => store.state);
   const dispatch = useEditor((store) => store.dispatch);
-  const { openLinkDialog } = useEditorActions();
+  const { openLinkDialog, askAi } = useEditorActions();
   const [position, setPosition] = useState<Position | null>(null);
 
   const caret = state.focus;
   const visible =
     !state.readOnly &&
+    state.suggestion === null &&
     state.selectedIds.size === 0 &&
     caret !== null &&
     caret.start < caret.end &&
@@ -103,6 +104,12 @@ export function SelectionToolbar({ canvas }: { canvas: RefObject<HTMLDivElement 
       )}
       <span aria-hidden className="mx-0.5 h-5 w-px bg-divider" />
       {button(t("link"), Spans.LINK, <Link size={16} />, () => caret && openLinkDialog(caret))}
+      <span aria-hidden className="mx-0.5 h-5 w-px bg-divider" />
+      {button(t("askAi"), null, <Sparkles size={16} />, () => {
+        // The command is about the line of the selected text.
+        if (caret) dispatch({ type: "select", ids: [caret.id] });
+        askAi();
+      })}
     </div>
   );
 }

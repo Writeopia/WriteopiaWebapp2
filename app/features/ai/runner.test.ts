@@ -32,8 +32,9 @@ function editorWith(...steps: Partial<StoryStep>[]) {
 
 function sse(...answers: string[]) {
   const body = answers
-    .map((answer, index) =>
-      `data: ${JSON.stringify({ response: answer, done: index === answers.length - 1 })}\n\n`,
+    .map(
+      (answer, index) =>
+        `data: ${JSON.stringify({ response: answer, done: index === answers.length - 1 })}\n\n`,
     )
     .join("");
   return new HttpResponse(body, { headers: { "Content-Type": "text/event-stream" } });
@@ -149,10 +150,12 @@ describe("runCommand", () => {
   it("puts the lines back when the AI fails, and says why", async () => {
     server.use(
       http.post(apiUrl("/ai/command-intent"), () => HttpResponse.json({ intent: "REPLACE" })),
-      http.post(apiUrl("/ai/command"), () =>
-        new HttpResponse('data: {"response":"part"}\n\ndata: {"error":"Quota"}\n\n', {
-          headers: { "Content-Type": "text/event-stream" },
-        }),
+      http.post(
+        apiUrl("/ai/command"),
+        () =>
+          new HttpResponse('data: {"response":"part"}\n\ndata: {"error":"Quota"}\n\n', {
+            headers: { "Content-Type": "text/event-stream" },
+          }),
       ),
     );
     const store = editorWith({ text: "a" }, { text: "b" });

@@ -54,7 +54,12 @@ describe("AI endpoints", () => {
           : HttpResponse.json({ error: "unsure" });
       }),
     );
-    const request = { command: "shorter", selectedText: "a", documentTitle: "T", documentText: "a" };
+    const request = {
+      command: "shorter",
+      selectedText: "a",
+      documentTitle: "T",
+      documentText: "a",
+    };
 
     expect(await commandIntent(request)).toBe("REPLACE");
     expect(await commandIntent(request)).toBeNull();

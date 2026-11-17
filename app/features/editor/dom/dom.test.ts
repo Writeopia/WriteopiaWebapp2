@@ -96,6 +96,7 @@ describe("keyCommand", () => {
     expect(keyCommand(key("y", { ctrlKey: true }), { ...context, isMac: false })).toBe("redo");
     expect(keyCommand(key("-", { metaKey: true }), context)).toBe("list");
     expect(keyCommand(key("f", { metaKey: true }), context)).toBe("find");
+    expect(keyCommand(key("j", { metaKey: true }), context)).toBe("askAi");
   });
 
   it("splits on Enter and joins on Backspace at the start only", () => {

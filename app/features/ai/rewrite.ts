@@ -33,9 +33,9 @@ const DIVIDER = /^-{3,}$/;
 
 /** The types the AI rewrites. Everything else is a kept block, which it does not see. */
 const REWRITABLE: ReadonlySet<number> = new Set(
-  (["TEXT", "CHECK_ITEM", "UNORDERED_LIST_ITEM", "CODE_BLOCK", "AI_ANSWER", "DIVIDER"] as const).map(
-    (key) => StoryTypes[key].number,
-  ),
+  (
+    ["TEXT", "CHECK_ITEM", "UNORDERED_LIST_ITEM", "CODE_BLOCK", "AI_ANSWER", "DIVIDER"] as const
+  ).map((key) => StoryTypes[key].number),
 );
 
 function placeholder(number: number): string {
@@ -78,8 +78,7 @@ export function buildRewrite(
   let high = entries.length - 1;
 
   if (sizes.reduce((sum, size) => sum + size, 0) > limit) {
-    const found =
-      cursor === null ? -1 : entries.findIndex((block) => block.position >= cursor);
+    const found = cursor === null ? -1 : entries.findIndex((block) => block.position >= cursor);
     const center = found >= 0 ? found : entries.length - 1;
     // A paragraph alone over the limit would reach the AI cut, and come back cut.
     if (sizes[center]! > limit) return null;

@@ -202,6 +202,11 @@ export function EditableText({
       case "find":
         setSearch({ open: true });
         return;
+      case "askAi":
+        // Selected text asks about its line.
+        if (caret.start < caret.end) dispatch({ type: "select", ids: [id] });
+        actions.askAi();
+        return;
       case "escape":
         if (state.slash) dispatch({ type: "slashClose" });
         else if (state.selectedIds.size > 0) dispatch({ type: "select", ids: [] });

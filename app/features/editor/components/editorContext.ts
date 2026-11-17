@@ -11,6 +11,8 @@ export type EditorActions = {
   /** Writes a new document next to this one and adds a link to it. */
   addPage: () => void;
   openDocument: (documentId: string) => void;
+  /** Opens the command field of the AI, about the selected blocks. */
+  askAi: () => void;
   /** The element that takes the keys while blocks are selected. */
   focusCanvas: () => void;
 };

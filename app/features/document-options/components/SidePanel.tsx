@@ -18,6 +18,7 @@ import { type ReactNode, useRef, useState } from "react";
 import { t } from "~/core/i18n";
 import { type Span, Spans, StoryTypes, Tags } from "~/core/models";
 import { cn } from "~/core/ui";
+import { AiPanel } from "~/features/ai/components/AiPanel";
 import { useEditorActions } from "~/features/editor/components/editorContext";
 import { targetIds } from "~/features/editor/state/reducer";
 import { useEditor } from "~/features/editor/state/store";
@@ -26,7 +27,13 @@ import { useDocumentOptions } from "../context";
 import { FONTS, useEditorFont } from "../font";
 import { useDocumentActionItems } from "./DocumentActions";
 
-type Tab = "page" | "text";
+type Tab = "page" | "text" | "ai";
+
+const TAB_LABELS = {
+  page: "sidePanelPage",
+  text: "sidePanelText",
+  ai: "sidePanelAi",
+} as const;
 
 /**
  * The side panel of the editor (SideEditorOptions.kt): the page — header, font, tags, actions,
@@ -43,7 +50,7 @@ export function SidePanel({ onClose }: { onClose: () => void }) {
     >
       <div className="flex items-center gap-1 border-b border-divider p-2">
         <div role="tablist" aria-label={t("sidePanel")} className="flex flex-1 gap-1">
-          {(["page", "text"] as const).map((each) => (
+          {(["page", "text", "ai"] as const).map((each) => (
             <button
               key={each}
               type="button"
@@ -56,7 +63,7 @@ export function SidePanel({ onClose }: { onClose: () => void }) {
                 tab === each ? "bg-selected-bg text-accent" : "hover:bg-options-selector",
               )}
             >
-              {each === "page" ? t("sidePanelPage") : t("sidePanelText")}
+              {t(TAB_LABELS[each])}
             </button>
           ))}
         </div>
@@ -70,7 +77,7 @@ export function SidePanel({ onClose }: { onClose: () => void }) {
         </button>
       </div>
       <div role="tabpanel" className="flex flex-1 flex-col gap-5 overflow-y-auto p-3">
-        {tab === "page" ? <PageOptions /> : <TextOptions />}
+        {tab === "page" ? <PageOptions /> : tab === "text" ? <TextOptions /> : <AiPanel />}
       </div>
     </aside>
   );

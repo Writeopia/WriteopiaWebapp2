@@ -1,11 +1,13 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { PanelRight } from "lucide-react";
-import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
 import { t } from "~/core/i18n";
 import { type Document, ROOT_FOLDER_ID, StoryTypes } from "~/core/models";
 import { showToast } from "~/core/ui";
+import { AiBar, AskAiButton } from "~/features/ai/components/AiBar";
+import { AiProvider } from "~/features/ai/components/AiProvider";
 import { DocumentActionsMenu } from "~/features/document-options/components/DocumentActions";
 import { DocumentOptionsProvider } from "~/features/document-options/components/DocumentOptionsProvider";
 import { SidePanel } from "~/features/document-options/components/SidePanel";
@@ -44,6 +46,11 @@ export function DocumentEditor({ document, navigation }: DocumentEditorProps) {
   const [link, setLink] = useState<{ caret: Caret; url: string } | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const font = useEditorFont((state) => state.font);
+  // The AI's command field, opened by the shortcut of the blocks.
+  const askAi = useRef<() => void>(() => undefined);
+  const registerAskAi = useCallback((open: () => void) => {
+    askAi.current = open;
+  }, []);
 
   const [store] = useState(() => {
     const created = createEditorStore();
@@ -158,6 +165,8 @@ export function DocumentEditor({ document, navigation }: DocumentEditorProps) {
 
       openDocument: (documentId) => void navigate(appPaths.document(documentId)),
 
+      askAi: () => askAi.current(),
+
       focusCanvas: () => {
         const canvas = containerRef.current?.querySelector<HTMLElement>("[data-editor-canvas]");
         if (!canvas) return;
@@ -173,48 +182,52 @@ export function DocumentEditor({ document, navigation }: DocumentEditorProps) {
     <EditorStoreContext.Provider value={store}>
       <EditorActionsContext.Provider value={actions}>
         <DocumentOptionsProvider document={document}>
-          <div ref={containerRef} className="flex h-full flex-col">
-            <TopBar>
-              {navigation}
-              <EditorToolbar status={status} onRetry={retry} />
-              <DocumentActionsMenu />
-              <button
-                type="button"
-                aria-label={t("sidePanel")}
-                title={t("sidePanel")}
-                aria-pressed={panelOpen}
-                onClick={() => setPanelOpen(!panelOpen)}
-                className="flex size-9 items-center justify-center rounded-md hover:bg-options-selector aria-pressed:bg-selected-bg"
-              >
-                <PanelRight size={18} aria-hidden />
-              </button>
-            </TopBar>
-            <SearchBar container={containerRef} />
-            <div className="flex min-h-0 flex-1">
-              <div
-                className="min-h-0 flex-1 overflow-y-auto"
-                style={{ "--wr-editor-font": fontFamily(font) } as CSSProperties}
-              >
-                <EditorCanvas />
+          <AiProvider registerAskAi={registerAskAi}>
+            <div ref={containerRef} className="flex h-full flex-col">
+              <TopBar>
+                {navigation}
+                <EditorToolbar status={status} onRetry={retry} />
+                <AskAiButton />
+                <DocumentActionsMenu />
+                <button
+                  type="button"
+                  aria-label={t("sidePanel")}
+                  title={t("sidePanel")}
+                  aria-pressed={panelOpen}
+                  onClick={() => setPanelOpen(!panelOpen)}
+                  className="flex size-9 items-center justify-center rounded-md hover:bg-options-selector aria-pressed:bg-selected-bg"
+                >
+                  <PanelRight size={18} aria-hidden />
+                </button>
+              </TopBar>
+              <SearchBar container={containerRef} />
+              <div className="flex min-h-0 flex-1">
+                <div
+                  className="min-h-0 flex-1 overflow-y-auto"
+                  style={{ "--wr-editor-font": fontFamily(font) } as CSSProperties}
+                >
+                  <EditorCanvas />
+                </div>
+                {panelOpen && <SidePanel onClose={() => setPanelOpen(false)} />}
               </div>
-              {panelOpen && <SidePanel onClose={() => setPanelOpen(false)} />}
+              <AiBar />
+              {link && (
+                <LinkDialog
+                  open
+                  initial={link.url}
+                  onClose={() => setLink(null)}
+                  onSave={(url) => {
+                    store.getState().dispatch({ type: "setLink", ...link.caret, url });
+                    setLink(null);
+                  }}
+                  onRemove={() => {
+                    store.getState().dispatch({ type: "setLink", ...link.caret, url: null });
+                    setLink(null);
+                  }}
+                />
+              )}
             </div>
-            {link && (
-              <LinkDialog
-                open
-                initial={link.url}
-                onClose={() => setLink(null)}
-                onSave={(url) => {
-                  store.getState().dispatch({ type: "setLink", ...link.caret, url });
-                  setLink(null);
-                }}
-                onRemove={() => {
-                  store.getState().dispatch({ type: "setLink", ...link.caret, url: null });
-                  setLink(null);
-                }}
-              />
-            )}
-          </div>
+          </AiProvider>
         </DocumentOptionsProvider>
       </EditorActionsContext.Provider>
     </EditorStoreContext.Provider>

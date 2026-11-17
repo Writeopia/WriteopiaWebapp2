@@ -16,9 +16,17 @@ import type { Block } from "./types";
 
 /** Steps written in with the keyboard. */
 const TEXT_TYPES: ReadonlySet<number> = new Set(
-  (["TEXT", "TITLE", "CHECK_ITEM", "UNORDERED_LIST_ITEM", "CODE_BLOCK", "TEXT_BOX"] as const).map(
-    (key) => StoryTypes[key].number,
-  ),
+  (
+    [
+      "TEXT",
+      "TITLE",
+      "CHECK_ITEM",
+      "UNORDERED_LIST_ITEM",
+      "CODE_BLOCK",
+      "TEXT_BOX",
+      "AI_ANSWER",
+    ] as const
+  ).map((key) => StoryTypes[key].number),
 );
 
 export function isTextBlock(step: Pick<StoryStep, "type">): boolean {

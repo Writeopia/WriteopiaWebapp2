@@ -24,6 +24,7 @@ export type KeyCommand =
   | "undo"
   | "redo"
   | "find"
+  | "askAi"
   | "escape"
   | "slashUp"
   | "slashDown"
@@ -87,6 +88,8 @@ export function keyCommand(event: KeyInput, context: KeyContext): KeyCommand | n
         return event.shiftKey ? null : "link";
       case "f":
         return event.shiftKey ? null : "find";
+      case "j":
+        return event.shiftKey ? null : "askAi";
       case "-":
         return "list";
       case "a":

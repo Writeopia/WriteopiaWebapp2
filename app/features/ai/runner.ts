@@ -1,13 +1,13 @@
 import type { StoreApi } from "zustand";
 
-import { isTitle, isTextBlock, textOf } from "~/features/editor/state/blocks";
+import { isTextBlock, isTitle, textOf } from "~/features/editor/state/blocks";
 import { find, ordered } from "~/features/editor/state/reducer";
 import type { EditorStore } from "~/features/editor/state/store";
 import type { Block, EditorState } from "~/features/editor/state/types";
 
 import {
-  aiFailure,
   type AiCommandIntent,
+  aiFailure,
   commandIntent,
   type QuickAction,
   streamCommand,

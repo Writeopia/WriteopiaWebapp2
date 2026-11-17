@@ -93,7 +93,10 @@ export function EditorCanvas() {
   const search = useEditor((s) => s.search);
   const [drop, setDrop] = useState<DropTarget | null>(null);
 
-  const blocks = useMemo(() => ordered(state), [state]);
+  // The lines an AI answer replaces are hidden until the answer is kept or discarded.
+  const blocks = useMemo(() => ordered(state).filter((block) => !block.hidden), [state]);
+  // Nothing is edited while an AI answer waits to be kept or discarded.
+  const locked = state.readOnly || state.suggestion !== null;
   const matches = useMemo(
     () => (search.open ? findMatches(state, search.query) : []),
     [state, search.open, search.query],
@@ -196,6 +199,9 @@ export function EditorCanvas() {
       case "find":
         setSearch({ open: true });
         break;
+      case "askAi":
+        actions.askAi();
+        break;
       case "escape":
         dispatch({ type: "select", ids: [] });
         break;
@@ -215,14 +221,14 @@ export function EditorCanvas() {
   };
 
   const onCut = (event: ClipboardEvent<HTMLDivElement>) => {
-    if (state.readOnly) return;
+    if (locked) return;
     onCopy(event);
     if (event.defaultPrevented) store.getState().dispatch({ type: "deleteSelected" });
   };
 
   /** A paste while blocks are selected goes after them. */
   const onPaste = (event: ClipboardEvent<HTMLDivElement>) => {
-    if (event.target !== event.currentTarget || state.readOnly) return;
+    if (event.target !== event.currentTarget || locked) return;
     const selected = selectedBlocks();
     const after = selected[selected.length - 1]?.id ?? blocks[blocks.length - 1]?.id ?? null;
     event.preventDefault();
@@ -254,7 +260,7 @@ export function EditorCanvas() {
   };
 
   const accepts = (event: DragEvent) =>
-    !state.readOnly &&
+    !locked &&
     (event.dataTransfer.types.includes(BLOCKS_MIME) || event.dataTransfer.types.includes("Files"));
 
   const onDragOver = (event: DragEvent<HTMLDivElement>) => {
@@ -318,13 +324,14 @@ export function EditorCanvas() {
           "group relative -mx-2 rounded-md px-2",
           groupClasses(parts[index] ?? null),
           selected && "bg-selected-bg",
+          hasTag(block, Tags.AI_SUGGESTION) && "border-l-2 border-accent bg-selected-bg/40",
           title && "mb-4",
         )}
         onClickCapture={(event) => {
           // Blocks with no text are selected by a click.
           if (
             !isTextBlock(block) &&
-            !state.readOnly &&
+            !locked &&
             !(event.target as HTMLElement).closest("a, button")
           ) {
             select([block.id]);
@@ -340,7 +347,7 @@ export function EditorCanvas() {
             )}
           />
         )}
-        {!state.readOnly && !title && (
+        {!locked && !title && (
           <button
             type="button"
             draggable
@@ -354,11 +361,7 @@ export function EditorCanvas() {
             <GripVertical size={16} aria-hidden />
           </button>
         )}
-        <BlockContent
-          block={block}
-          readOnly={state.readOnly}
-          decorations={decorations.get(block.id)}
-        />
+        <BlockContent block={block} readOnly={locked} decorations={decorations.get(block.id)} />
       </div>
     );
   };
@@ -380,11 +383,11 @@ export function EditorCanvas() {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDrop(null);
       }}
       onDrop={onDrop}
-      onPointerDown={state.readOnly ? undefined : dragBox.onPointerDown}
+      onPointerDown={locked ? undefined : dragBox.onPointerDown}
     >
       {blocks.map(row)}
 
-      {!state.readOnly && (
+      {!locked && (
         <button
           type="button"
           aria-label={t("editorAddLine")}

@@ -134,6 +134,30 @@ export function BlockContent({ block, readOnly, decorations }: BlockContentProps
     case "LINK_CARD":
       return <LinkCardBlock block={block} />;
 
+    case "AI_ANSWER":
+      return (
+        <EditableText
+          block={block}
+          readOnly={readOnly}
+          decorations={decorations}
+          ariaLabel={t("editorAiAnswerLabel")}
+          placeholder={t("editorPlaceholder")}
+          className="py-0.5 leading-relaxed"
+        />
+      );
+
+    case "SKELETON":
+      return (
+        <div
+          role="status"
+          aria-label={t("editorSkeletonLabel")}
+          className="flex flex-col gap-2 py-2"
+        >
+          <span className="h-3 w-11/12 animate-pulse rounded bg-options-selector" />
+          <span className="h-3 w-3/4 animate-pulse rounded bg-options-selector" />
+        </div>
+      );
+
     case "EQUATION":
       return block.url ? (
         <img src={block.url} alt={textOf(block)} className="max-w-full py-2" />
