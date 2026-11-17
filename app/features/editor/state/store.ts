@@ -87,6 +87,12 @@ export function createEditorStore(initial: EditorState = emptyState): StoreApi<E
 
         if (action.type === "load") {
           history.clear();
+        } else if (action.type === "suggestAccept") {
+          // A kept answer is undone in one step, back to the document before it.
+          const before = state.suggestion!.before;
+          history.push({ order: before.order, blocks: before.blocks, focus: state.focus });
+        } else if (action.type.startsWith("suggest")) {
+          // An answer still suggested is not part of the history.
         } else if (!record && action.type === "updateBlock") {
           history.patch(action.id, (block) => ({ ...block, ...action.changes }));
         } else if (
@@ -105,14 +111,14 @@ export function createEditorStore(initial: EditorState = emptyState): StoreApi<E
 
       undo: () => {
         const { state } = get();
-        if (state.readOnly) return;
+        if (state.readOnly || state.suggestion) return;
         const to = history.undo(snapshot(state));
         if (to) restore(to);
       },
 
       redo: () => {
         const { state } = get();
-        if (state.readOnly) return;
+        if (state.readOnly || state.suggestion) return;
         const to = history.redo(snapshot(state));
         if (to) restore(to);
       },

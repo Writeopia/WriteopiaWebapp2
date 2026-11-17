@@ -8,6 +8,7 @@ import {
   StoryTypes,
   type Tag,
   tagCarriesOver,
+  Tags,
 } from "~/core/models";
 import { RANK_FIRST, rankBefore, rankBetween } from "~/core/rank/rank";
 
@@ -88,7 +89,14 @@ export type Action =
   | { type: "serverUpdate"; steps: StoryStep[]; deletedIds: string[]; keepIds: ReadonlySet<string> }
   | { type: "slashHighlight"; offset: number; count: number }
   | { type: "slashClose" }
-  | { type: "slashPick"; command: SlashCommand; now: Date };
+  | { type: "slashPick"; command: SlashCommand; now: Date }
+  /** An AI answer begins: [hideIds] are the lines it replaces, it goes after [afterId]. */
+  | { type: "suggestBegin"; hideIds: string[]; afterId: string | null }
+  /** The answer so far, as blocks. A hidden block among them is one the answer keeps. */
+  | { type: "suggestUpdate"; blocks: Block[] }
+  | { type: "suggestDone" }
+  | { type: "suggestAccept" }
+  | { type: "suggestDiscard" };
 
 export const emptyState: EditorState = {
   documentId: "",
@@ -100,6 +108,7 @@ export const emptyState: EditorState = {
   lastEdit: { kind: "nothing" },
   slash: null,
   readOnly: false,
+  suggestion: null,
 };
 
 export function reducer(state: EditorState, action: Action): EditorState {
@@ -129,9 +138,24 @@ export function reducer(state: EditorState, action: Action): EditorState {
     // would delete it on the server if the editor never held it.
     case "serverUpdate":
       return serverUpdate(state, action.steps, action.deletedIds, action.keepIds);
+    case "suggestBegin":
+      return state.readOnly || state.suggestion
+        ? state
+        : suggestBegin(state, action.hideIds, action.afterId);
+    case "suggestUpdate":
+      return suggestUpdate(state, action.blocks);
+    case "suggestDone":
+      return state.suggestion?.streaming
+        ? { ...state, suggestion: { ...state.suggestion, streaming: false } }
+        : state;
+    case "suggestAccept":
+      return suggestAccept(state);
+    case "suggestDiscard":
+      return suggestDiscard(state);
   }
 
-  if (state.readOnly) return state;
+  // A suggestion is kept or discarded before the document changes again.
+  if (state.readOnly || state.suggestion) return state;
 
   switch (action.type) {
     case "input":
@@ -222,6 +246,7 @@ export function documentContent(state: EditorState): StoryStep[] {
 export function toStep(block: Block): StoryStep {
   const step: Block = { ...block };
   delete step.ephemeral;
+  delete step.hidden;
   return step;
 }
 
@@ -1077,6 +1102,153 @@ export function contentOf(step: StoryStep) {
     step.documentLink,
     step.steps,
   ];
+}
+
+// ---------------------------------------------------------------------------------------------
+// AI suggestions
+
+function suggestBegin(state: EditorState, hideIds: string[], afterId: string | null): EditorState {
+  const target = placement(state);
+  const hidden: string[] = [];
+  for (const position of state.order) {
+    const block = state.blocks[position]!;
+    if (hideIds.includes(block.id) && !isTitle(block)) {
+      target.blocks[position] = { ...block, hidden: true };
+      hidden.push(block.id);
+    }
+  }
+
+  const skeleton: Block = { ...newBlock(StoryTypes.SKELETON, { text: null }), ephemeral: true };
+  placeAfter(target, suggestionAnchor(state, target, afterId), [skeleton]);
+
+  return withPlacement(state, target, {
+    focus: null,
+    selectedIds: new Set(),
+    suggestion: {
+      hiddenIds: hidden,
+      afterId,
+      ids: [skeleton.id],
+      copies: {},
+      streaming: true,
+      before: { order: state.order, blocks: state.blocks },
+    },
+  });
+}
+
+/** Where the answer goes: after [afterId], or at the end of the document. */
+function suggestionAnchor(
+  state: EditorState,
+  target: Placement,
+  afterId: string | null,
+): string | null {
+  const anchor = afterId ? find({ ...state, ...target }, afterId) : null;
+  return anchor?.position ?? target.order[target.order.length - 1] ?? null;
+}
+
+function suggestUpdate(state: EditorState, blocks: Block[]): EditorState {
+  const suggestion = state.suggestion;
+  if (!suggestion || blocks.length === 0) return state;
+
+  const target = placement(state);
+  for (const id of suggestion.ids) {
+    const found = find({ ...state, ...target }, id);
+    if (found) unplace(target, found.position);
+  }
+
+  // The blocks keep their ids from one part of the answer to the next, so the page keeps them.
+  const plainIds = suggestion.ids.filter((id) => !(id in suggestion.copies));
+  const copyOf = new Map(Object.entries(suggestion.copies).map(([copy, id]) => [id, copy]));
+  const copies: Record<string, string> = {};
+
+  const suggested = blocks.map((block, index): Block => {
+    let id: string;
+    if (suggestion.hiddenIds.includes(block.id)) {
+      id = copyOf.get(block.id) ?? generateId();
+      copies[id] = block.id;
+    } else {
+      id = plainIds.shift() ?? generateId();
+    }
+    const tags = block.tags.filter(
+      (info) => info.tag !== Tags.AI_SUGGESTION && info.tag !== Tags.FIRST_AI_SUGGESTION,
+    );
+    tags.push({ tag: Tags.AI_SUGGESTION, position: 0 });
+    if (index === 0) tags.push({ tag: Tags.FIRST_AI_SUGGESTION, position: 0 });
+    const copy: Block = { ...block, id, tags, ephemeral: true };
+    delete copy.hidden;
+    return copy;
+  });
+
+  placeAfter(target, suggestionAnchor(state, target, suggestion.afterId), suggested);
+  return {
+    ...state,
+    blocks: target.blocks,
+    order: target.order,
+    lastEdit: { kind: "structure" },
+    suggestion: { ...suggestion, ids: suggested.map((block) => block.id), copies },
+  };
+}
+
+function suggestAccept(state: EditorState): EditorState {
+  const suggestion = state.suggestion;
+  if (!suggestion || suggestion.streaming) return state;
+
+  const target = placement(state);
+  const current = () => ({ ...state, ...target });
+  const keptIds = new Set(Object.values(suggestion.copies));
+
+  for (const id of suggestion.hiddenIds) {
+    const found = find(current(), id);
+    if (found && !keptIds.has(id)) unplace(target, found.position);
+  }
+
+  for (const id of suggestion.ids) {
+    const found = find(current(), id);
+    if (!found) continue;
+    const originalId = suggestion.copies[id];
+    if (originalId) {
+      // The kept block itself takes the place of its copy, with its own id.
+      const original = find(current(), originalId);
+      unplace(target, found.position);
+      if (!original) continue;
+      unplace(target, original.position);
+      const block: Block = { ...original.block };
+      delete block.hidden;
+      place(target, block, found.position);
+    } else if (found.block.type.number === StoryTypes.SKELETON.number) {
+      unplace(target, found.position);
+    } else {
+      const block: Block = {
+        ...found.block,
+        tags: found.block.tags.filter(
+          (info) => info.tag !== Tags.AI_SUGGESTION && info.tag !== Tags.FIRST_AI_SUGGESTION,
+        ),
+      };
+      delete block.ephemeral;
+      target.blocks[found.position] = block;
+    }
+  }
+
+  return withPlacement(state, target, { suggestion: null });
+}
+
+function suggestDiscard(state: EditorState): EditorState {
+  const suggestion = state.suggestion;
+  if (!suggestion) return state;
+
+  const target = placement(state);
+  for (const id of suggestion.ids) {
+    const found = find({ ...state, ...target }, id);
+    if (found) unplace(target, found.position);
+  }
+  for (const position of target.order) {
+    const block = target.blocks[position]!;
+    if (block.hidden) {
+      const shown: Block = { ...block };
+      delete shown.hidden;
+      target.blocks[position] = shown;
+    }
+  }
+  return withPlacement(state, target, { suggestion: null });
 }
 
 // ---------------------------------------------------------------------------------------------

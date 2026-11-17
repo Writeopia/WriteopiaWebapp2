@@ -12,6 +12,11 @@ export type Block = StoryStep & {
    * mark the same steps by their type (loading, skeleton).
    */
   ephemeral?: boolean;
+  /**
+   * Only on this screen: still saved, but not drawn. The lines an AI answer replaces, until
+   * the answer is kept or discarded.
+   */
+  hidden?: boolean;
 };
 
 /** The caret, or the selected text when start < end, inside the text block with [id]. */
@@ -25,6 +30,26 @@ export type LastEdit = { kind: "nothing" } | { kind: "line"; id: string } | { ki
 
 /** A "/" command being typed: where its slash is and what was typed after it. */
 export type SlashInput = { id: string; slashIndex: number; filter: string; highlight: number };
+
+/**
+ * An answer of the AI shown in the document before the writer keeps or discards it. The lines
+ * it replaces are hidden meanwhile; the suggested blocks are ephemeral, so nothing of it is
+ * saved until it is kept.
+ */
+export type Suggestion = {
+  /** The blocks the answer replaces, hidden while it stands. */
+  hiddenIds: string[];
+  /** The block the answer goes after; null for the end of the document. */
+  afterId: string | null;
+  /** The suggested blocks, in order. */
+  ids: string[];
+  /** The suggested blocks that stand for a hidden block the answer keeps: copy id → its id. */
+  copies: Record<string, string>;
+  /** True while the answer still arrives. */
+  streaming: boolean;
+  /** The document before the answer, for the undo of a kept answer. */
+  before: { order: string[]; blocks: Record<string, Block> };
+};
 
 export type EditorState = {
   documentId: string;
@@ -43,6 +68,7 @@ export type EditorState = {
   lastEdit: LastEdit;
   slash: SlashInput | null;
   readOnly: boolean;
+  suggestion: Suggestion | null;
 };
 
 export type { SpanInfo, StoryStep, StoryType };
