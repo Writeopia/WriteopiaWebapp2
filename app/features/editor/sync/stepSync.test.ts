@@ -11,7 +11,13 @@ import { StepSync, type SyncStatus } from "./stepSync";
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
-const title = aStep({ id: "title", type: StoryTypes.TITLE, text: "T", position: rankAt(0), lastUpdatedAt: 50 });
+const title = aStep({
+  id: "title",
+  type: StoryTypes.TITLE,
+  text: "T",
+  position: rankAt(0),
+  lastUpdatedAt: 50,
+});
 const line = aStep({ id: "a", text: "a", position: rankAt(1), lastUpdatedAt: 80 });
 
 function setup(
@@ -22,7 +28,7 @@ function setup(
 ) {
   const requests: StepSyncRequest[] = [];
   const statuses: SyncStatus[] = [];
-  const updates: [StoryStep[], string[]][] = [];
+  const updates: [StoryStep[], string[], ReadonlySet<string>][] = [];
   const sync = new StepSync(
     {
       documentId: "doc",
@@ -31,8 +37,8 @@ function setup(
         requests.push(request);
         return answer(request);
       },
-      onServerUpdate: (steps, deleted) => {
-        updates.push([steps, deleted]);
+      onServerUpdate: (steps, deleted, keep) => {
+        updates.push([steps, deleted, keep]);
         apply(sync, steps);
       },
       onStatus: (status) => statuses.push(status),
@@ -96,7 +102,7 @@ describe("StepSync", () => {
     );
     sync.update([title, { ...line, text: "ab" }]);
     await vi.runAllTimersAsync();
-    expect(updates).toEqual([[[remote], ["x"]]]);
+    expect(updates).toEqual([[[remote], ["x"], new Set()]]);
 
     sync.update([title, { ...line, text: "ab" }, remote]);
     await vi.runAllTimersAsync();
@@ -144,5 +150,54 @@ describe("StepSync", () => {
     await vi.runAllTimersAsync();
     expect(requests).toHaveLength(2);
     expect(requests[1]!.changes[0]!.storyStep.text).toBe("abc");
+  });
+
+  it("lets a step changed elsewhere replace the one here when it was not edited here", async () => {
+    const remoteLine = { ...line, text: "from elsewhere" };
+    let answered = false;
+    const { sync, requests, updates } = setup(
+      () => {
+        const updatedSteps = answered ? [] : [remoteLine];
+        answered = true;
+        return Promise.resolve({ serverTimestamp: 1_000, updatedSteps, deletedIds: [] });
+      },
+      (self, steps) => self.update([{ ...title, text: "T2" }, ...steps]),
+    );
+    sync.update([{ ...title, text: "T2" }, line]);
+    await vi.runAllTimersAsync();
+
+    expect(updates[0]![2]).toEqual(new Set());
+    expect(requests).toHaveLength(1);
+    expect(sync.hasUnsaved()).toBe(false);
+  });
+
+  it("keeps a step edited here while the request was out, and sends it next", async () => {
+    let release: () => void = () => undefined;
+    let first = true;
+    const { sync, requests, updates } = setup(() => {
+      if (!first)
+        return Promise.resolve({ serverTimestamp: 2_000, updatedSteps: [], deletedIds: [] });
+      first = false;
+      return new Promise((resolve) => {
+        release = () =>
+          resolve({
+            serverTimestamp: 1_000,
+            updatedSteps: [{ ...line, text: "remote" }],
+            deletedIds: [],
+          });
+      });
+    });
+    sync.update([{ ...title, text: "T2" }, line]);
+    const flushed = sync.flush();
+    sync.update([
+      { ...title, text: "T2" },
+      { ...line, text: "local" },
+    ]);
+    release();
+    await flushed;
+
+    expect(updates[0]![2]).toEqual(new Set(["a"]));
+    await vi.runAllTimersAsync();
+    expect(requests[1]!.changes.map((change) => change.storyStep.text)).toEqual(["local"]);
   });
 });

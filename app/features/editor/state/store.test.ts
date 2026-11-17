@@ -60,7 +60,9 @@ describe("editor store", () => {
 
   it("does not record what came from elsewhere", () => {
     const store = loaded();
-    store.getState().dispatch({ type: "updateBlock", id: "s1", changes: { text: "x" } }, { history: false });
+    store
+      .getState()
+      .dispatch({ type: "updateBlock", id: "s1", changes: { text: "x" } }, { history: false });
     expect(store.getState().canUndo).toBe(false);
   });
 });

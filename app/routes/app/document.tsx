@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
+import { ChevronLeft } from "lucide-react";
 import { Link } from "react-router";
 
 import { ApiError } from "~/core/api";
 import { t } from "~/core/i18n";
 import { ROOT_FOLDER_ID } from "~/core/models";
 import { Button, Spinner } from "~/core/ui";
+import { DocumentEditor } from "~/features/editor/components/DocumentEditor";
 import { getDocument } from "~/features/menu/api";
-import { ItemIcon } from "~/features/menu/icons";
 import { appPaths } from "~/features/menu/paths";
 import { TopBar } from "~/features/shell/components/TopBar";
 import { useWorkspace } from "~/features/workspaces/WorkspaceContext";
@@ -14,29 +15,38 @@ import { useWorkspace } from "~/features/workspaces/WorkspaceContext";
 import type { Route } from "./+types/document";
 
 /**
- * Where the editor will be. Until then it shows which document was opened and the way back
- * to its folder.
+ * An open document. It is read once when the screen opens and never again from the cache:
+ * from then on the editor holds it, and the step sync keeps both sides up to date.
  */
 export default function DocumentRoute({ params }: Route.ComponentProps) {
   const { workspace } = useWorkspace();
   const document = useQuery({
     queryKey: ["document", workspace.id, params.documentId],
     queryFn: ({ signal }) => getDocument(workspace.id, params.documentId, signal),
+    gcTime: 0,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
-  const notFound = document.error instanceof ApiError && document.error.isNotFound;
-  const title = document.data?.title.trim() ? document.data.title : t("untitled");
+  const back = (
+    <Link
+      to={appPaths.folder(document.data?.parentId ?? ROOT_FOLDER_ID)}
+      className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-text-lighter hover:bg-options-selector"
+    >
+      <ChevronLeft size={16} aria-hidden />
+      {t("backToFolder")}
+    </Link>
+  );
 
+  if (document.data) {
+    return <DocumentEditor key={document.data.id} document={document.data} navigation={back} />;
+  }
+
+  const notFound = document.error instanceof ApiError && document.error.isNotFound;
   return (
     <div className="flex h-full flex-col">
-      <TopBar>
-        <Link
-          to={appPaths.folder(document.data?.parentId ?? ROOT_FOLDER_ID)}
-          className="rounded-md px-2 py-1 text-sm text-text-lighter hover:bg-options-selector"
-        >
-          {t("backToFolder")}
-        </Link>
-      </TopBar>
+      <TopBar>{back}</TopBar>
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
         {document.isPending && <Spinner />}
         {document.isError && (
@@ -49,15 +59,6 @@ export default function DocumentRoute({ params }: Route.ComponentProps) {
                 {t("retry")}
               </Button>
             )}
-          </>
-        )}
-        {document.data && (
-          <>
-            <h1 className="flex items-center gap-2 text-2xl font-bold">
-              <ItemIcon icon={document.data.icon} kind="document" size={24} />
-              {title}
-            </h1>
-            <p className="text-text-light">{t("editorComingSoon")}</p>
           </>
         )}
       </div>

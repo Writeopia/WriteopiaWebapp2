@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { type SpanInfo, Spans, type StoryStep, StoryTypes, Tags } from "~/core/models";
 import { rankAt, rankConfig } from "~/core/rank/rank";
-import { aDocument, aStep } from "../../../../test/fixtures";
 
+import { aDocument, aStep } from "../../../../test/fixtures";
 import { newBlock } from "./blocks";
 import { SLASH_COMMANDS } from "./commands";
 import { type Action, documentContent, emptyState, find, ordered, reducer } from "./reducer";
@@ -124,7 +124,10 @@ describe("typing", () => {
       cursor: 25,
     });
     const blocks = ordered(state);
-    expect(blocks[1]).toMatchObject({ type: StoryTypes.LINK_CARD, url: "https://writeopia.io/blog" });
+    expect(blocks[1]).toMatchObject({
+      type: StoryTypes.LINK_CARD,
+      url: "https://writeopia.io/blog",
+    });
     expect(blocks[2]).toMatchObject({ type: StoryTypes.TEXT, text: "" });
     expect(state.focus?.id).toBe(blocks[2]!.id);
   });
@@ -161,8 +164,16 @@ describe("line commands", () => {
   });
 
   it("keeps the text after the command", () => {
-    const state = run(editor({ text: "milk" }), { type: "input", id: "s1", text: "- milk", cursor: 2 });
-    expect(block(state, "s1")).toMatchObject({ type: StoryTypes.UNORDERED_LIST_ITEM, text: "milk" });
+    const state = run(editor({ text: "milk" }), {
+      type: "input",
+      id: "s1",
+      text: "- milk",
+      cursor: 2,
+    });
+    expect(block(state, "s1")).toMatchObject({
+      type: StoryTypes.UNORDERED_LIST_ITEM,
+      text: "milk",
+    });
     expect(state.focus).toMatchObject({ id: "s1", start: 0 });
   });
 
@@ -375,11 +386,11 @@ describe("slash menu", () => {
 
   it("runs a command and takes its text away", () => {
     const checkbox = SLASH_COMMANDS.find((command) => command.id === "checkbox")!;
-    const state = run(
-      editor({ text: "milk " }),
-      ...typing("s1", "milk ", "/che"),
-      { type: "slashPick", command: checkbox, now: new Date() },
-    );
+    const state = run(editor({ text: "milk " }), ...typing("s1", "milk ", "/che"), {
+      type: "slashPick",
+      command: checkbox,
+      now: new Date(),
+    });
     expect(block(state, "s1")).toMatchObject({ type: StoryTypes.CHECK_ITEM, text: "milk " });
     expect(state.slash).toBeNull();
   });
@@ -387,11 +398,11 @@ describe("slash menu", () => {
   it("inserts the date", () => {
     const today = SLASH_COMMANDS.find((command) => command.id === "today")!;
     const now = new Date(2026, 10, 17, 9, 5);
-    const state = run(
-      editor({ text: "" }),
-      ...typing("s1", "", "/to"),
-      { type: "slashPick", command: today, now },
-    );
+    const state = run(editor({ text: "" }), ...typing("s1", "", "/to"), {
+      type: "slashPick",
+      command: today,
+      now,
+    });
     expect(block(state, "s1").text).toBe(now.toLocaleDateString());
   });
 });
@@ -404,7 +415,12 @@ describe("blocks", () => {
       { type: "focus", focus: { id: "s2", start: 0, end: 0 } },
       { type: "insertBlocks", blocks: [image] },
     );
-    expect(ordered(state).map((b) => b.type.name)).toEqual(["title", "message", "image", "message"]);
+    expect(ordered(state).map((b) => b.type.name)).toEqual([
+      "title",
+      "message",
+      "image",
+      "message",
+    ]);
     expect(find(state, "s2")).toBeNull();
   });
 
@@ -412,7 +428,10 @@ describe("blocks", () => {
     const state = run(editor({ text: "abcd" }), {
       type: "pasteBlocks",
       caret: { id: "s1", start: 2, end: 2 },
-      blocks: [newBlock(StoryTypes.TEXT, { text: "X" }), newBlock(StoryTypes.CHECK_ITEM, { text: "Y" })],
+      blocks: [
+        newBlock(StoryTypes.TEXT, { text: "X" }),
+        newBlock(StoryTypes.CHECK_ITEM, { text: "Y" }),
+      ],
     });
     expect(texts(state)).toEqual(["Title", "abX", "Ycd"]);
     expect(ordered(state)[2]!.type).toEqual(StoryTypes.CHECK_ITEM);
@@ -448,7 +467,11 @@ describe("blocks", () => {
       { type: "extendSelection", up: false },
     );
     expect([...state.selectedIds]).toEqual(["s2"]);
-    state = run(state, { type: "extendSelection", up: false }, { type: "extendSelection", up: true });
+    state = run(
+      state,
+      { type: "extendSelection", up: false },
+      { type: "extendSelection", up: true },
+    );
     expect([...state.selectedIds].sort()).toEqual(["s1", "s2", "s3"]);
     expect(reducer(state, { type: "extendSelection", up: true })).toBe(state);
   });
@@ -487,7 +510,11 @@ describe("read-only", () => {
 describe("documentContent", () => {
   it("leaves out the blocks only this screen has", () => {
     const uploading = { ...newBlock(StoryTypes.IMAGE), ephemeral: true };
-    const state = run(editor({ text: "a" }), { type: "insertBlocks", blocks: [uploading], afterId: "s1" });
+    const state = run(editor({ text: "a" }), {
+      type: "insertBlocks",
+      blocks: [uploading],
+      afterId: "s1",
+    });
     expect(documentContent(state).map((step) => step.text)).toEqual(["Title", "a", ""]);
     expect(documentContent(state)[0]).not.toHaveProperty("ephemeral");
   });

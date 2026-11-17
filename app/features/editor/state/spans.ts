@@ -41,7 +41,11 @@ export function adjustSpans(
   if (spans.length === 0 || oldText === newText) return spans;
 
   let prefix = 0;
-  while (prefix < oldText.length && prefix < newText.length && oldText[prefix] === newText[prefix]) {
+  while (
+    prefix < oldText.length &&
+    prefix < newText.length &&
+    oldText[prefix] === newText[prefix]
+  ) {
     prefix++;
   }
   if (cursor !== undefined) {

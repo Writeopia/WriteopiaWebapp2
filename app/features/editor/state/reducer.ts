@@ -24,7 +24,7 @@ import {
   withTag,
   withType,
 } from "./blocks";
-import { detectSlash, type LineCommandEffect, lineCommandAt, type SlashCommand } from "./commands";
+import { detectSlash, lineCommandAt, type LineCommandEffect, type SlashCommand } from "./commands";
 import { isPastedLink } from "./links";
 import {
   adjustSpans,
@@ -213,7 +213,8 @@ export function documentContent(state: EditorState): StoryStep[] {
 
 /** The step without what only the editor holds. */
 export function toStep(block: Block): StoryStep {
-  const { ephemeral: _ephemeral, ...step } = block;
+  const step: Block = { ...block };
+  delete step.ephemeral;
   return step;
 }
 
@@ -525,7 +526,10 @@ function split(state: EditorState, id: string, start: number, end: number): Edit
   if (isListLike(block) && text === "") {
     return withPlacement(
       state,
-      { blocks: { ...state.blocks, [position]: withType(block, StoryTypes.TEXT) }, order: state.order },
+      {
+        blocks: { ...state.blocks, [position]: withType(block, StoryTypes.TEXT) },
+        order: state.order,
+      },
       caretTo(state, id, 0),
     );
   }
@@ -754,8 +758,15 @@ function mapTargets(
   }
   if (!changed) return state;
 
-  const keepCaret = state.focus && ids.includes(state.focus.id) ? { focusRequest: state.focusRequest + 1 } : {};
-  return { ...state, blocks: target.blocks, lastEdit: { kind: "structure" }, slash: null, ...keepCaret };
+  const keepCaret =
+    state.focus && ids.includes(state.focus.id) ? { focusRequest: state.focusRequest + 1 } : {};
+  return {
+    ...state,
+    blocks: target.blocks,
+    lastEdit: { kind: "structure" },
+    slash: null,
+    ...keepCaret,
+  };
 }
 
 /**
@@ -792,8 +803,7 @@ function insertBlocks(
 
   // An empty paragraph where the blocks go is replaced by them.
   if (
-    anchor &&
-    anchor.block.type.number === StoryTypes.TEXT.number &&
+    anchor?.block.type.number === StoryTypes.TEXT.number &&
     textOf(anchor.block) === "" &&
     !isTitle(anchor.block)
   ) {
@@ -853,7 +863,8 @@ function pasteBlocks(state: EditorState, caret: Caret, pasted: Block[]): EditorS
 
   const anchor = target.blocks[position] ? position : (state.order[found.index - 1] ?? null);
   const positions = placeAfter(target, anchor, blocks);
-  const lastPosition = positions[positions.length - 1] ?? (target.blocks[position] ? position : null);
+  const lastPosition =
+    positions[positions.length - 1] ?? (target.blocks[position] ? position : null);
   const last = lastPosition ? target.blocks[lastPosition]! : null;
 
   let caretId: string;
@@ -874,7 +885,10 @@ function pasteBlocks(state: EditorState, caret: Caret, pasted: Block[]): EditorS
     offset = 0;
   }
 
-  return withPlacement(state, target, { ...caretTo(state, caretId, offset), selectedIds: new Set() });
+  return withPlacement(state, target, {
+    ...caretTo(state, caretId, offset),
+    selectedIds: new Set(),
+  });
 }
 
 function removeIds(state: EditorState, ids: string[]): EditorState {
@@ -924,7 +938,13 @@ function move(state: EditorState, ids: string[], afterId: string | null): Editor
   }
 
   placeAfter(target, after, moving);
-  if (target.order.every((position, index) => state.order[index] === position && target.blocks[position]!.id === state.blocks[position]!.id)) {
+  if (
+    target.order.every(
+      (position, index) =>
+        state.order[index] === position &&
+        target.blocks[position]!.id === state.blocks[position]!.id,
+    )
+  ) {
     return state;
   }
   return withPlacement(state, target);
@@ -934,7 +954,7 @@ function move(state: EditorState, ids: string[], afterId: string | null): Editor
 function clickAtEnd(state: EditorState): EditorState {
   const lastPosition = state.order[state.order.length - 1];
   const last = lastPosition ? state.blocks[lastPosition] : undefined;
-  if (last && last.type.number === StoryTypes.TEXT.number && textOf(last) === "") {
+  if (last?.type.number === StoryTypes.TEXT.number && textOf(last) === "") {
     return { ...state, ...caretTo(state, last.id, 0), selectedIds: new Set() };
   }
   const target = placement(state);
@@ -986,7 +1006,13 @@ function serverUpdate(
 
   if (!changed) return state;
   const focus = state.focus && find({ ...state, ...target }, state.focus.id) ? state.focus : null;
-  return { ...state, blocks: target.blocks, order: target.order, focus, lastEdit: { kind: "nothing" } };
+  return {
+    ...state,
+    blocks: target.blocks,
+    order: target.order,
+    focus,
+    lastEdit: { kind: "nothing" },
+  };
 }
 
 function sameStep(block: Block, step: StoryStep): boolean {
@@ -1034,7 +1060,12 @@ function slashPick(state: EditorState, command: SlashCommand, now: Date): Editor
 
   if (command.effect.kind === "insert") {
     const inserted = command.effect.text(now);
-    const next = input(closed, slash.id, text.slice(0, start) + inserted + text.slice(end), start + inserted.length);
+    const next = input(
+      closed,
+      slash.id,
+      text.slice(0, start) + inserted + text.slice(end),
+      start + inserted.length,
+    );
     return { ...next, slash: null, focusRequest: next.focusRequest + 1 };
   }
 

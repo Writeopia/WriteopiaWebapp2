@@ -28,8 +28,11 @@ export type StepSyncOptions = {
   documentId: string;
   workspaceId: string;
   send: (request: StepSyncRequest) => Promise<StepSyncResponse>;
-  /** Steps changed and deleted elsewhere, to show in the editor. */
-  onServerUpdate: (steps: StoryStep[], deletedIds: string[]) => void;
+  /**
+   * Steps changed and deleted elsewhere, to show in the editor, but not over the blocks in
+   * [keepIds]: they have changes not sent yet.
+   */
+  onServerUpdate: (steps: StoryStep[], deletedIds: string[], keepIds: ReadonlySet<string>) => void;
   onStatus: (status: SyncStatus) => void;
   debounceMs?: number;
   maxFailures?: number;
@@ -119,7 +122,7 @@ export class StepSync {
       if (block.ephemeral) continue;
       present.add(block.id);
       const known = this.known.get(block.id);
-      if (!known || known.key !== keyOf(block, block.position)) {
+      if (known?.key !== keyOf(block, block.position)) {
         changes.push({ storyStep: toStep(block), position: block.position });
       }
     }
@@ -201,13 +204,18 @@ export class StepSync {
     }
     for (const id of deletions) this.known.delete(id);
 
-    // What changed elsewhere becomes what the server holds, then goes to the editor.
+    // What changed elsewhere goes to the editor, except over the blocks edited here while
+    // the request was out: those win and are sent next.
+    const keep = this.unsavedIds();
     for (const step of response.updatedSteps) {
+      if (keep.has(step.id)) continue;
       this.known.set(step.id, { position: step.position, key: keyOf(step, step.position) });
     }
-    for (const id of response.deletedIds) this.known.delete(id);
+    for (const id of response.deletedIds) {
+      if (!keep.has(id)) this.known.delete(id);
+    }
     if (!this.stopped && (response.updatedSteps.length > 0 || response.deletedIds.length > 0)) {
-      this.options.onServerUpdate(response.updatedSteps, response.deletedIds);
+      this.options.onServerUpdate(response.updatedSteps, response.deletedIds, keep);
     }
 
     if (this.stopped) return;

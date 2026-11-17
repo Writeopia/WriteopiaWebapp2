@@ -21,10 +21,7 @@ export type Caret = { id: string; start: number; end: number };
  * How the last change touched the document. Typing in one block is grouped in the history;
  * anything else is a change of structure.
  */
-export type LastEdit =
-  | { kind: "nothing" }
-  | { kind: "line"; id: string }
-  | { kind: "structure" };
+export type LastEdit = { kind: "nothing" } | { kind: "line"; id: string } | { kind: "structure" };
 
 /** A "/" command being typed: where its slash is and what was typed after it. */
 export type SlashInput = { id: string; slashIndex: number; filter: string; highlight: number };

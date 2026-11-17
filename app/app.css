@@ -117,3 +117,61 @@ body {
     transform: rotate(360deg);
   }
 }
+
+/* The editor: what spansToDom writes inside the blocks. */
+.wr-editable {
+  caret-color: var(--wr-accent);
+}
+
+.wr-editable:focus-visible {
+  outline: none;
+}
+
+/* The hint of an empty block: always for the title, on the line being written otherwise. */
+.wr-editable:empty::before {
+  content: attr(data-placeholder);
+  color: var(--wr-text-lighter);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.wr-editable.wr-placeholder-always:empty::before,
+.wr-editable:focus:empty::before {
+  opacity: 1;
+}
+
+.wr-link {
+  color: var(--wr-link);
+  text-decoration: underline;
+}
+
+.wr-hl-yellow {
+  background-color: #fff176;
+}
+
+.wr-hl-green {
+  background-color: #a5d6a7;
+}
+
+.wr-hl-red {
+  background-color: #ef9a9a;
+}
+
+:root[data-theme="dark"] .wr-hl-yellow,
+:root[data-theme="dark"] .wr-hl-green,
+:root[data-theme="dark"] .wr-hl-red {
+  color: #1d1d1d;
+}
+
+.wr-comment {
+  border-bottom: 2px solid var(--wr-accent-secondary);
+}
+
+.wr-match {
+  background-color: color-mix(in srgb, var(--wr-accent) 25%, transparent);
+  color: inherit;
+}
+
+.wr-match-active {
+  background-color: color-mix(in srgb, var(--wr-accent) 55%, transparent);
+}

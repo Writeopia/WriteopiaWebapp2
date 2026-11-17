@@ -1,8 +1,8 @@
 import { createContext, useContext } from "react";
 import { createStore, type StoreApi, useStore } from "zustand";
 
-import { type Action, emptyState, reducer } from "./reducer";
 import { History, type Snapshot } from "./history";
+import { type Action, emptyState, reducer } from "./reducer";
 import type { EditorState } from "./types";
 
 /**
@@ -26,15 +26,15 @@ export type EditorStore = {
   canUndo: boolean;
   canRedo: boolean;
   search: SearchState;
-  /** Image blocks being uploaded, by id. */
-  uploading: ReadonlySet<string>;
+  /** Image blocks being uploaded: their id and a local address of the picture meanwhile. */
+  uploading: ReadonlyMap<string, string>;
   /** Link cards whose description is being written, by id. */
   describing: ReadonlySet<string>;
   dispatch: (action: Action, options?: DispatchOptions) => void;
   undo: () => void;
   redo: () => void;
   setSearch: (search: Partial<SearchState>) => void;
-  setUploading: (id: string, uploading: boolean) => void;
+  setUploading: (id: string, preview: string | null) => void;
   setDescribing: (id: string, describing: boolean) => void;
 };
 
@@ -77,7 +77,7 @@ export function createEditorStore(initial: EditorState = emptyState): StoreApi<E
       canUndo: false,
       canRedo: false,
       search: { open: false, query: "", index: 0 },
-      uploading: new Set(),
+      uploading: new Map(),
       describing: new Set(),
 
       dispatch: (action, { history: record = true } = {}) => {
@@ -116,7 +116,12 @@ export function createEditorStore(initial: EditorState = emptyState): StoreApi<E
       },
 
       setSearch: (search) => set({ search: { ...get().search, ...search } }),
-      setUploading: (id, uploading) => set({ uploading: toggled(get().uploading, id, uploading) }),
+      setUploading: (id, preview) => {
+        const uploading = new Map(get().uploading);
+        if (preview === null) uploading.delete(id);
+        else uploading.set(id, preview);
+        set({ uploading });
+      },
       setDescribing: (id, describing) =>
         set({ describing: toggled(get().describing, id, describing) }),
     };

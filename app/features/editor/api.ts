@@ -32,7 +32,10 @@ export type StepSyncResponse = z.infer<typeof stepSyncResponseSchema>;
  * Sends the steps changed and deleted here, and answers the ones changed and deleted
  * elsewhere since the last sync. A step changed on both sides keeps the newer one.
  */
-export function syncSteps(workspaceId: string, request: StepSyncRequest): Promise<StepSyncResponse> {
+export function syncSteps(
+  workspaceId: string,
+  request: StepSyncRequest,
+): Promise<StepSyncResponse> {
   return api.post(
     `${documentPath(workspaceId, request.documentId)}/steps/sync`,
     request,

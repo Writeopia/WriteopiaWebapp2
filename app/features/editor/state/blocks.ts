@@ -92,8 +92,7 @@ function isTextLike(type: StoryType): boolean {
 
 /** The block as the type [type]: the checkbox state only belongs to checkboxes. */
 export function withType(block: Block, type: StoryType): Block {
-  const checked =
-    type.number === StoryTypes.CHECK_ITEM.number ? (block.checked ?? false) : null;
+  const checked = type.number === StoryTypes.CHECK_ITEM.number ? (block.checked ?? false) : null;
   return { ...block, type, checked, text: block.text ?? (isTextLike(type) ? "" : null) };
 }
 

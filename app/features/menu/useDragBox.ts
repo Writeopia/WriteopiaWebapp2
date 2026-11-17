@@ -16,16 +16,24 @@ function intersects(rect: DOMRect, box: Box): boolean {
 
 /**
  * Selecting cards by dragging a box over them. The press has to start on the empty space
- * between the cards; the cards under the box are the ones marked with data-entry-id.
+ * between the cards; the cards under the box are the ones marked with data-entry-id (or the
+ * data attribute named by [item]).
  */
-export function useDragBox(onSelect: (ids: string[]) => void, onEmptyClick: () => void) {
+export function useDragBox(
+  onSelect: (ids: string[]) => void,
+  onEmptyClick: () => void,
+  item: { selector: string; id: (element: HTMLElement) => string } = {
+    selector: "[data-entry-id]",
+    id: (element) => element.dataset.entryId ?? "",
+  },
+) {
   const [box, setBox] = useState<Box | null>(null);
 
   const onPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
     if (event.button !== 0 || event.pointerType === "touch") return;
 
     const pressed = event.target as HTMLElement;
-    if (pressed.closest("[data-entry-id], button, a, input, [role='menu']")) return;
+    if (pressed.closest(`${item.selector}, button, a, input, [role='menu']`)) return;
 
     const container = event.currentTarget;
     const start = { x: event.clientX, y: event.clientY };
@@ -43,9 +51,9 @@ export function useDragBox(onSelect: (ids: string[]) => void, onEmptyClick: () =
       dragging = true;
       setBox(next);
       onSelect(
-        Array.from(container.querySelectorAll<HTMLElement>("[data-entry-id]"))
+        Array.from(container.querySelectorAll<HTMLElement>(item.selector))
           .filter((card) => intersects(card.getBoundingClientRect(), next))
-          .map((card) => card.dataset.entryId ?? ""),
+          .map(item.id),
       );
     };
 

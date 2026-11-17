@@ -8,9 +8,7 @@ import type { SlashInput } from "./types";
  */
 
 export type LineCommandEffect =
-  | { kind: "type"; type: StoryType }
-  | { kind: "heading"; tag: Tag }
-  | { kind: "tag"; tag: Tag };
+  { kind: "type"; type: StoryType } | { kind: "heading"; tag: Tag } | { kind: "tag"; tag: Tag };
 
 export type LineCommand = { text: string; effect: LineCommandEffect };
 
@@ -38,8 +36,9 @@ export const LINE_COMMANDS: readonly LineCommand[] = [
  */
 export function lineCommandAt(text: string, cursor: number): LineCommand | null {
   return (
-    LINE_COMMANDS.find((command) => cursor === command.text.length && text.startsWith(command.text)) ??
-    null
+    LINE_COMMANDS.find(
+      (command) => cursor === command.text.length && text.startsWith(command.text),
+    ) ?? null
   );
 }
 

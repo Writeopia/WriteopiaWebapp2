@@ -42,7 +42,9 @@ export class History {
   /** Remembers [snapshot], the document right before text typed in block [id]. */
   pushTyping(snapshot: Snapshot, id: string, now: number = Date.now()) {
     const grouped =
-      id === this.lastTextId && this.textEdits < TEXT_EDIT_LIMIT && now - this.lastTextAt < PAUSE_MS;
+      id === this.lastTextId &&
+      this.textEdits < TEXT_EDIT_LIMIT &&
+      now - this.lastTextAt < PAUSE_MS;
     this.lastTextAt = now;
     if (grouped) {
       this.textEdits++;
@@ -95,6 +97,8 @@ export class History {
 function sameContent(a: Snapshot, b: Snapshot): boolean {
   return (
     a.order.length === b.order.length &&
-    a.order.every((position, index) => position === b.order[index] && a.blocks[position] === b.blocks[position])
+    a.order.every(
+      (position, index) => position === b.order[index] && a.blocks[position] === b.blocks[position],
+    )
   );
 }
