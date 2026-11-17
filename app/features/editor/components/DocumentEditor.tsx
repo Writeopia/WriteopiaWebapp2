@@ -1,10 +1,15 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { PanelRight } from "lucide-react";
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
 import { t } from "~/core/i18n";
 import { type Document, ROOT_FOLDER_ID, StoryTypes } from "~/core/models";
 import { showToast } from "~/core/ui";
+import { DocumentActionsMenu } from "~/features/document-options/components/DocumentActions";
+import { DocumentOptionsProvider } from "~/features/document-options/components/DocumentOptionsProvider";
+import { SidePanel } from "~/features/document-options/components/SidePanel";
+import { fontFamily, useEditorFont } from "~/features/document-options/font";
 import { saveDocuments } from "~/features/menu/api";
 import { appPaths } from "~/features/menu/paths";
 import { menuKeys, newDocument } from "~/features/menu/queries";
@@ -37,6 +42,8 @@ export function DocumentEditor({ document, navigation }: DocumentEditorProps) {
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
   const [link, setLink] = useState<{ caret: Caret; url: string } | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const font = useEditorFont((state) => state.font);
 
   const [store] = useState(() => {
     const created = createEditorStore();
@@ -44,10 +51,6 @@ export function DocumentEditor({ document, navigation }: DocumentEditorProps) {
     return created;
   });
   const { status, retry, flush } = useDocumentSync(store, document, workspace.id);
-
-  useEffect(() => {
-    store.getState().dispatch({ type: "setReadOnly", readOnly: document.isLocked });
-  }, [store, document.isLocked]);
 
   // A link card made here (a pasted address) gets the description of its page from the
   // backend, once it is saved there.
@@ -169,31 +172,50 @@ export function DocumentEditor({ document, navigation }: DocumentEditorProps) {
   return (
     <EditorStoreContext.Provider value={store}>
       <EditorActionsContext.Provider value={actions}>
-        <div ref={containerRef} className="flex h-full flex-col">
-          <TopBar>
-            {navigation}
-            <EditorToolbar status={status} onRetry={retry} />
-          </TopBar>
-          <SearchBar container={containerRef} />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <EditorCanvas />
+        <DocumentOptionsProvider document={document}>
+          <div ref={containerRef} className="flex h-full flex-col">
+            <TopBar>
+              {navigation}
+              <EditorToolbar status={status} onRetry={retry} />
+              <DocumentActionsMenu />
+              <button
+                type="button"
+                aria-label={t("sidePanel")}
+                title={t("sidePanel")}
+                aria-pressed={panelOpen}
+                onClick={() => setPanelOpen(!panelOpen)}
+                className="flex size-9 items-center justify-center rounded-md hover:bg-options-selector aria-pressed:bg-selected-bg"
+              >
+                <PanelRight size={18} aria-hidden />
+              </button>
+            </TopBar>
+            <SearchBar container={containerRef} />
+            <div className="flex min-h-0 flex-1">
+              <div
+                className="min-h-0 flex-1 overflow-y-auto"
+                style={{ "--wr-editor-font": fontFamily(font) } as CSSProperties}
+              >
+                <EditorCanvas />
+              </div>
+              {panelOpen && <SidePanel onClose={() => setPanelOpen(false)} />}
+            </div>
+            {link && (
+              <LinkDialog
+                open
+                initial={link.url}
+                onClose={() => setLink(null)}
+                onSave={(url) => {
+                  store.getState().dispatch({ type: "setLink", ...link.caret, url });
+                  setLink(null);
+                }}
+                onRemove={() => {
+                  store.getState().dispatch({ type: "setLink", ...link.caret, url: null });
+                  setLink(null);
+                }}
+              />
+            )}
           </div>
-          {link && (
-            <LinkDialog
-              open
-              initial={link.url}
-              onClose={() => setLink(null)}
-              onSave={(url) => {
-                store.getState().dispatch({ type: "setLink", ...link.caret, url });
-                setLink(null);
-              }}
-              onRemove={() => {
-                store.getState().dispatch({ type: "setLink", ...link.caret, url: null });
-                setLink(null);
-              }}
-            />
-          )}
-        </div>
+        </DocumentOptionsProvider>
       </EditorActionsContext.Provider>
     </EditorStoreContext.Provider>
   );

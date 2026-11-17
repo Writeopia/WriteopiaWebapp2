@@ -370,7 +370,7 @@ export function EditorCanvas() {
       ref={canvasRef}
       data-editor-canvas
       tabIndex={-1}
-      className="relative mx-auto w-full max-w-3xl px-10 pt-10 pb-4 outline-none sm:px-14"
+      className="relative mx-auto w-full max-w-3xl px-10 pt-10 pb-4 font-(family-name:--wr-editor-font) outline-none sm:px-14"
       onKeyDown={onKeyDown}
       onCopy={onCopy}
       onCut={onCut}

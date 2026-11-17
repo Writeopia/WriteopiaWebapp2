@@ -1,10 +1,11 @@
 import { ExternalLink, FileText, ImageOff } from "lucide-react";
+import { useContext } from "react";
 
 import { t } from "~/core/i18n";
 import { storyTypeKey } from "~/core/models";
 import { cn, Spinner } from "~/core/ui";
 
-import { useEditorActions } from "../components/editorContext";
+import { TitleFrameContext, useEditorActions } from "../components/editorContext";
 import type { Decoration } from "../dom/spansToDom";
 import { headingLevel, textOf } from "../state/blocks";
 import { useEditor } from "../state/store";
@@ -27,11 +28,12 @@ const HEADING_CLASSES: Record<number, string> = {
 /** What a block shows, by its type (the drawers of the SDK, drawer/content/*Drawer.kt). */
 export function BlockContent({ block, readOnly, decorations }: BlockContentProps) {
   const dispatch = useEditor((store) => store.dispatch);
+  const frame = useContext(TitleFrameContext);
   const key = storyTypeKey(block.type);
 
   switch (key) {
-    case "TITLE":
-      return (
+    case "TITLE": {
+      const title = (
         <EditableText
           block={block}
           readOnly={readOnly}
@@ -41,6 +43,8 @@ export function BlockContent({ block, readOnly, decorations }: BlockContentProps
           className="wr-placeholder-always py-1 text-4xl leading-tight font-bold"
         />
       );
+      return frame ? frame({ block, readOnly, children: title }) : title;
+    }
 
     case "TEXT":
     case "TEXT_BOX": {

@@ -124,12 +124,12 @@ Legend: **M#** is the milestone the feature lands in.
 
 ### Document options — [06](06-document-options.md)
 
-- [ ] Customizable header: none / color / workspace image / AI-generated image (M5)
-- [ ] Document icon picker, favorite, move to folder, delete, lock (M5)
-- [ ] Document tags: view, add, create, AI-suggested tag (M5)
-- [ ] Font family (M5)
-- [ ] Export as Markdown / JSON (M5)
-- [ ] Publish to web / unpublish / copy link (M5)
+- [x] Customizable header: none / color / workspace image / AI-generated image (M5)
+- [x] Document icon picker, favorite, move to folder, delete, lock (M5)
+- [x] Document tags: view, add, create, AI-suggested tag (M5)
+- [x] Font family (M5)
+- [x] Export as Markdown / JSON (M5)
+- [x] Publish to web / unpublish / copy link (M5)
 - [ ] Comments on text (M8)
 
 ### AI — [07](07-ai.md)

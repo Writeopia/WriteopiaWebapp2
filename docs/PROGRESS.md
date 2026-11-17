@@ -19,6 +19,49 @@ Entry template:
 
 ---
 
+## 2026-11-17 — M5 — Document options
+
+Implements `docs/plan/06-document-options.md`, except comments (M8).
+
+**Done**
+
+- `app/features/document-options`: the header in the title step (none, a colour of the other
+  apps' palette, a workspace picture, a picture drawn by the AI), drawn with the crop rule of
+  `HeaderPictureCrop`.
+- Header editor: swatches, the workspace's pictures, generation with instructions, Use image /
+  Try another / Discard, failure and "could not keep it" states.
+- "⋯" menu in the editor's top bar: favorite, move, header, icon, tags, lock / unlock, find,
+  export Markdown / JSON, publish, delete.
+- Tag chips under the title, the tags dialog, the new tag dialog (unique name, AI suggestion).
+- Publish dialog with the public link and Copy link; a premium dialog for FREE users and 403s.
+- Side panel with a Page tab (header, font, tags, actions, export, publish) and a Text tab
+  (styles, highlights, box / card, checkbox, list, code, image, page, link).
+- Editor font preference (System, Serif, Monospace, Cursive) in `localStorage`.
+- Two Playwright journeys: a header colour kept after a reload, locking from the menu.
+
+**Decisions**
+
+- See "What was built" in `docs/plan/06-document-options.md`.
+- Comments are left for M8, as the plan and the milestone table label them.
+
+**Verified**
+
+- `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test` (373 passed), `pnpm build`
+  and `pnpm test:e2e` (18 passed) pass locally.
+- The component tests were written after the components, not before them. Each one was
+  checked by breaking the code it covers (header exclusivity, the rollback of a refused
+  change, keeping a used picture, the title of a metadata save) and watching it fail.
+- Not verified: nothing has run against a real backend; whether the header picture CDN
+  allows CORS (needed for the crop rule) is unknown; no check in a real browser beyond
+  Playwright.
+
+**Next**
+
+- Run the document options against a backend, the CDN's CORS headers in particular.
+- M6 — `docs/plan/07-ai.md`.
+
+---
+
 ## 2026-11-17 — M3 + M4 — Text editor
 
 Implements `docs/plan/05-editor.md` except the M8 blocks (spreadsheet, equation, drawing).

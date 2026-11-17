@@ -13,7 +13,8 @@ export type MenuDialog =
   | { type: "editFolder"; folder: Folder }
   | { type: "icon"; document: Document }
   | { type: "delete"; entries: MenuEntry[] }
-  | { type: "move"; entries: MenuEntry[] };
+  /** [onMoved] is told the folder the entries went to. */
+  | { type: "move"; entries: MenuEntry[]; onMoved?: (folderId: string) => void };
 
 type MenuDialogState = {
   dialog: MenuDialog | null;

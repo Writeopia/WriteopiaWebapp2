@@ -137,16 +137,46 @@ Reference: `CommentThreadOverlay.kt`, `CommentUiState.kt`, `CommentExtensions.kt
 - Component: header editor with MSW (list, generate, use, try another, discard, failures), tags
   dialogs, publish dialog incl. premium branch.
 
+## What was built
+
+| Module (`app/features/document-options/`) | Contents                                                                                   |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `header.ts`                               | The header in the title step (none / colour / picture), the palette, the crop rule         |
+| `generation.ts`                           | The state machine of a picture drawn by the AI                                             |
+| `export.ts`                               | Markdown and JSON of the open document, the plain text for the AI, the download            |
+| `font.ts`                                 | The editor font preference                                                                 |
+| `api.ts`                                  | AI status, header pictures, header generation, tag catalogue, AI tag, publishing           |
+| `components/`                             | The provider of the options, the title frame, the dialogs, the "⋯" menu and the side panel |
+
+Differences from the plan above:
+
+- **Use image** puts the picture in the header at once and keeps it with the workspace's
+  pictures in the background, as this plan says. The Kotlin app keeps it first and applies it
+  after. When keeping fails the header stays and the panel offers "Keep it again".
+- The editor holds the document's own fields (icon, tags, lock, favorite, folder) in
+  `DocumentOptionsProvider`. They are saved with `POST /document` without steps, **with the
+  title of the title step**. That endpoint also writes the title, so the title the document
+  was opened with would undo a rename.
+- The editor draws the title through a `TitleFrameContext` slot, so `editor/` does not know
+  about the header, the icon or the tags.
+- The header picture is read a second time with CORS to find the drawing's rows. When the CDN
+  does not allow that, the picture is shown whole, centred like `object-fit: cover`.
+- The "+" menu of the editor stays next to the new side panel.
+- The tag catalogue is read from the root folder's contents (any folder answers it).
+- Generating pictures and suggesting tags need a PREMIUM user and `/ai/status` answering
+  `available`.
+- The public link uses this app's own origin: `<origin>/site/<documentId>`.
+
 ## Tasks
 
-- [ ] Header rendering: none / colour / picture (with crop rule)
-- [ ] Header editor: colour swatches
-- [ ] Header editor: workspace images grid
-- [ ] Header editor: AI generation (instructions, generate, use / try another / discard)
-- [ ] Document actions menu (favorite, move, icon, lock, find, delete)
-- [ ] Tag chips, tags dialog, add tag dialog, AI tag suggestion
-- [ ] Font preference
-- [ ] Side panel: page style + text options tabs
-- [ ] Export Markdown / JSON
-- [ ] Publish dialog + premium dialog
+- [x] Header rendering: none / colour / picture (with crop rule)
+- [x] Header editor: colour swatches
+- [x] Header editor: workspace images grid
+- [x] Header editor: AI generation (instructions, generate, use / try another / discard)
+- [x] Document actions menu (favorite, move, icon, lock, find, delete)
+- [x] Tag chips, tags dialog, add tag dialog, AI tag suggestion
+- [x] Font preference
+- [x] Side panel: page style + text options tabs
+- [x] Export Markdown / JSON
+- [x] Publish dialog + premium dialog
 - [ ] Comments (M8)

@@ -120,8 +120,14 @@ export class FakeBackend {
       const body = request.postDataJSON() as { storyStep: Step };
       return json({ storyStep: { ...body.storyStep, text: "A page about things" } });
     }
-    if (path === "/docs/workspace/document" && method === "POST")
+    if (path === "/docs/workspace/document" && method === "POST") {
+      const body = request.postDataJSON() as { documents: { id: string; isLocked: boolean }[] };
+      const saved = body.documents.find((document) => document.id === this.documentId);
+      if (saved) this.locked = saved.isLocked;
       return route.fulfill({ status: 200 });
+    }
+    if (path === "/ai/status") return json({ available: false });
+    if (path === `/ai/header-images/${WORKSPACE_ID}`) return json({ images: [] });
     console.warn(`Not faked: ${method} ${path}`);
     return route.fulfill({ status: 404, body: `Not faked: ${method} ${path}` });
   }

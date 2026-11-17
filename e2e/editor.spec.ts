@@ -331,3 +331,37 @@ test("a line brought back by undo after its deletion was saved is saved again", 
   await page.reload();
   await expect(block(page, "Second")).toBeVisible();
 });
+
+test("a header color is saved in the title and kept after a reload", async ({ page }) => {
+  const backend = new FakeBackend(DOCUMENT_ID, [titleStep("Trip")]);
+  await open(page, backend);
+
+  await page.getByRole("textbox", { name: "Title" }).hover();
+  await page.getByRole("button", { name: "Edit header" }).click();
+  await page
+    .getByRole("dialog", { name: "Header" })
+    .getByRole("radio", { name: "#0000ff" })
+    .click();
+  await page.getByRole("button", { name: "Done" }).click();
+  await saved(page);
+  expect(backend.steps.get("title")?.decoration).toEqual({ backgroundColor: -16776961 });
+
+  await page.reload();
+  await expect(page.getByTestId("document-header")).toHaveAttribute("data-header", "color");
+});
+
+test("locking from the document actions makes the document read only", async ({ page }) => {
+  const backend = new FakeBackend(DOCUMENT_ID, [titleStep("Trip")]);
+  await open(page, backend);
+
+  await page.getByRole("button", { name: "Document actions" }).click();
+  await page.getByRole("menuitem", { name: "Lock document" }).click();
+  await expect(page.getByText("Locked")).toBeVisible();
+  await expect.poll(() => backend.locked).toBe(true);
+
+  await page.reload();
+  await expect(page.getByRole("textbox", { name: "Title" })).toHaveAttribute(
+    "contenteditable",
+    "false",
+  );
+});

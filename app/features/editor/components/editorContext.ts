@@ -1,6 +1,6 @@
-import { createContext, useContext } from "react";
+import { createContext, type ReactNode, useContext } from "react";
 
-import type { Caret } from "../state/types";
+import type { Block, Caret } from "../state/types";
 
 /** What the blocks ask of the editor around them: the work that needs the backend or a dialog. */
 export type EditorActions = {
@@ -22,3 +22,15 @@ export function useEditorActions(): EditorActions {
   if (!actions) throw new Error("useEditorActions is used outside of an editor");
   return actions;
 }
+
+/**
+ * What the screen around the editor draws around the title: the header, the icon, the tags.
+ * Without one the title is drawn alone.
+ */
+export type TitleFrame = (props: {
+  block: Block;
+  readOnly: boolean;
+  children: ReactNode;
+}) => ReactNode;
+
+export const TitleFrameContext = createContext<TitleFrame | null>(null);

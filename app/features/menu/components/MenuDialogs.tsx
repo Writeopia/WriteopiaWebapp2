@@ -31,7 +31,7 @@ export function MenuDialogs() {
     case "delete":
       return <DeleteDialog entries={dialog.entries} onClose={close} />;
     case "move":
-      return <MoveDialog entries={dialog.entries} onClose={close} />;
+      return <MoveDialog entries={dialog.entries} onMoved={dialog.onMoved} onClose={close} />;
     default:
       return null;
   }
@@ -169,7 +169,13 @@ function DeleteDialog({ entries, onClose }: { entries: MenuEntry[]; onClose: () 
 }
 
 /** Picks the folder to move entries to, by walking down from Home. */
-function MoveDialog({ entries, onClose }: { entries: MenuEntry[]; onClose: () => void }) {
+type MoveDialogProps = {
+  entries: MenuEntry[];
+  onMoved?: (folderId: string) => void;
+  onClose: () => void;
+};
+
+function MoveDialog({ entries, onMoved, onClose }: MoveDialogProps) {
   const { workspace } = useWorkspace();
   const { move } = useMenuActions();
   const [trail, setTrail] = useState<Folder[]>([]);
@@ -185,6 +191,7 @@ function MoveDialog({ entries, onClose }: { entries: MenuEntry[]; onClose: () =>
 
   const confirm = () => {
     move(entries, { id: currentId, title: current?.title ?? t("home") });
+    onMoved?.(currentId);
     onClose();
   };
 
