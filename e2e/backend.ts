@@ -38,6 +38,9 @@ export class FakeBackend {
   readonly syncs: { changes: { storyStep: Step; position: string }[]; deletions: string[] }[] = [];
   readonly uploads: string[] = [];
   locked = false;
+  /** Whether the backend has a cloud AI; it answers every command with [aiAnswer]. */
+  aiAvailable = false;
+  aiAnswer = "";
   /** Like the real backend: a deleted step id is never stored again. */
   readonly tombstones = new Set<string>();
 
@@ -126,7 +129,17 @@ export class FakeBackend {
       if (saved) this.locked = saved.isLocked;
       return route.fulfill({ status: 200 });
     }
-    if (path === "/ai/status") return json({ available: false });
+    if (path === "/ai/status") return json({ available: this.aiAvailable });
+    if (path === "/ai/usage") return json({ totalTokens: 0, quota: 100_000 });
+    if (path === "/ai/writing-suggestions") return json({ suggestions: [] });
+    if (path === "/ai/command-intent") return json({ intent: "ADD" });
+    if (path === "/ai/command") {
+      return route.fulfill({
+        status: 200,
+        contentType: "text/event-stream",
+        body: `data: ${JSON.stringify({ response: this.aiAnswer, done: true })}\n\n`,
+      });
+    }
     if (path === `/ai/header-images/${WORKSPACE_ID}`) return json({ images: [] });
     console.warn(`Not faked: ${method} ${path}`);
     return route.fulfill({ status: 404, body: `Not faked: ${method} ${path}` });

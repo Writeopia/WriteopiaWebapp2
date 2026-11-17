@@ -3,8 +3,11 @@ import { useState } from "react";
 
 import { t } from "~/core/i18n";
 import { Button, cn } from "~/core/ui";
-import { useEditor } from "~/features/editor/state/store";
+import { isTextBlock, textOf } from "~/features/editor/state/blocks";
+import { find, targetIds } from "~/features/editor/state/reducer";
+import { useEditor, useEditorStoreApi } from "~/features/editor/state/store";
 
+import { drawParagraphImage } from "../actions";
 import { getAiUsage, type QuickAction } from "../api";
 import { aiKeys, useAi } from "../context";
 import type { QuickActionTarget } from "../runner";
@@ -22,6 +25,13 @@ const QUICK_ACTIONS: { action: QuickAction; label: () => string }[] = [
  */
 export function AiPanel() {
   const ai = useAi();
+  const store = useEditorStoreApi();
+  // The paragraph a picture is drawn for: the focused one, or the first selected.
+  const paragraphId = useEditor((editor) => {
+    const id = targetIds(editor.state)[0];
+    const block = id ? find(editor.state, id)?.block : undefined;
+    return block && isTextBlock(block) && textOf(block).trim() !== "" ? block.id : null;
+  });
   const hasSelectedLines = useEditor((store) => store.state.selectedIds.size > 0);
   const hasSuggestion = useEditor((store) => store.state.suggestion !== null);
   const [target, setTarget] = useState<QuickActionTarget>("document");
@@ -98,6 +108,18 @@ export function AiPanel() {
             {label()}
           </button>
         ))}
+      </section>
+
+      <section className="flex flex-col gap-1.5">
+        <button
+          type="button"
+          disabled={blocked || paragraphId === null}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => ai.run((signal) => drawParagraphImage(store, paragraphId, signal))}
+          className="rounded-md px-2 py-1.5 text-left text-sm hover:bg-options-selector disabled:opacity-40"
+        >
+          {t("aiImageForParagraph")}
+        </button>
       </section>
 
       {usage.data && (

@@ -15,6 +15,8 @@ import { menuBackend } from "../../../../test/msw/menuBackend";
 import { server } from "../../../../test/msw/server";
 import { renderAppRoute } from "../../../../test/render";
 
+const DRAG_HANDLE = "Drag to move, click to select";
+
 const notes = aDocument({
   id: "notes",
   title: "Notes",
@@ -214,5 +216,38 @@ describe("the AI tab of the side panel", () => {
     expect(within(panel).getByText("Select lines in the document first")).toBeInTheDocument();
     expect(within(panel).getByRole("button", { name: "Summary" })).toBeDisabled();
     expect(within(panel).getByRole("radio", { name: "Cursor" })).toBeDisabled();
+  });
+
+  it("draws an image for the selected paragraph, below it", async () => {
+    backend();
+    let paragraph = "";
+    server.use(
+      http.post(apiUrl("/ai/image"), async ({ request }) => {
+        paragraph = ((await request.json()) as { paragraph: string }).paragraph;
+        return HttpResponse.json({ imageUrl: "https://cdn/drawn.png" });
+      }),
+    );
+    renderNotes();
+
+    const handles = await screen.findAllByRole("button", { name: DRAG_HANDLE });
+    await userEvent.click(handles[1]!);
+    const panel = await openAiTab();
+    const draw = within(panel).getByRole("button", { name: "Draw an image for this paragraph" });
+    await waitFor(() => expect(draw).toBeEnabled());
+    await userEvent.click(draw);
+
+    await screen.findByText("Keep the AI's answer?");
+    expect(paragraph).toBe("second line");
+    expect(document.querySelector('img[src="https://cdn/drawn.png"]')).not.toBeNull();
+  });
+
+  it("cannot draw an image with no paragraph chosen", async () => {
+    backend();
+    renderNotes();
+
+    const panel = await openAiTab();
+    expect(
+      within(panel).getByRole("button", { name: "Draw an image for this paragraph" }),
+    ).toBeDisabled();
   });
 });

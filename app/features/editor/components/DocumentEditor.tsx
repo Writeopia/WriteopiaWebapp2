@@ -8,6 +8,7 @@ import { type Document, ROOT_FOLDER_ID, StoryTypes } from "~/core/models";
 import { showToast } from "~/core/ui";
 import { AiBar, AskAiButton } from "~/features/ai/components/AiBar";
 import { AiProvider } from "~/features/ai/components/AiProvider";
+import { WritingAgentBox } from "~/features/ai/components/WritingAgentBox";
 import { DocumentActionsMenu } from "~/features/document-options/components/DocumentActions";
 import { DocumentOptionsProvider } from "~/features/document-options/components/DocumentOptionsProvider";
 import { SidePanel } from "~/features/document-options/components/SidePanel";
@@ -201,13 +202,14 @@ export function DocumentEditor({ document, navigation }: DocumentEditorProps) {
                 </button>
               </TopBar>
               <SearchBar container={containerRef} />
-              <div className="flex min-h-0 flex-1">
+              <div className="relative flex min-h-0 flex-1">
                 <div
                   className="min-h-0 flex-1 overflow-y-auto"
                   style={{ "--wr-editor-font": fontFamily(font) } as CSSProperties}
                 >
                   <EditorCanvas />
                 </div>
+                <WritingAgentBox />
                 {panelOpen && <SidePanel onClose={() => setPanelOpen(false)} />}
               </div>
               <AiBar />

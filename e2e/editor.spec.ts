@@ -365,3 +365,26 @@ test("locking from the document actions makes the document read only", async ({ 
     "false",
   );
 });
+
+test("an answer of the AI is saved only once kept, and stays after a reload", async ({ page }) => {
+  const backend = twoLines();
+  backend.aiAvailable = true;
+  backend.aiAnswer = "- Bread\n- Cheese";
+  await open(page, backend);
+
+  await block(page, "Second").click();
+  await page.keyboard.press("ControlOrMeta+j");
+  await page.getByRole("textbox", { name: "Ask AI…" }).fill("add two foods");
+  await page.keyboard.press("Enter");
+
+  await expect(page.getByText("Keep the AI's answer?")).toBeVisible();
+  await expect(block(page, "Cheese")).toBeVisible();
+  await saved(page);
+  expect(backend.texts()).toEqual(["Notes", "First", "Second"]);
+
+  await page.getByRole("button", { name: "Keep" }).click();
+  await expect.poll(() => backend.texts()).toEqual(["Notes", "First", "Second", "Bread", "Cheese"]);
+
+  await page.reload();
+  await expect(block(page, "Cheese")).toBeVisible();
+});
