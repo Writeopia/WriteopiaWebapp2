@@ -19,6 +19,64 @@ Entry template:
 
 ---
 
+## 2026-11-17 — M3 + M4 — Text editor
+
+Implements `docs/plan/05-editor.md` except the M8 blocks (spreadsheet, equation, drawing).
+
+**Done**
+
+- `app/features/editor`: a block editor with one `contenteditable` per text block and every
+  change going through one reducer (port of ContentHandler / ContentManager.swift).
+- Blocks: title, paragraph, H1–H4, checkbox, bullet list, code, divider, box, card, image,
+  document link ("Add page"), link card (described by the backend). Unknown and M8 blocks
+  show a placeholder and are kept untouched.
+- Enter / Backspace / Delete with split and merge, arrows across blocks keeping the column,
+  line commands, the "/" menu, the format toolbar (B, I, U, three highlights, link), the link
+  dialog, ⌘/Ctrl-click on links, pasted addresses as links or link cards.
+- Undo / redo (grouped typing), block selection (drag box, Shift+arrows, ⌘A), copy / cut /
+  paste of blocks (Markdown + steps JSON), drag-and-drop reordering, image upload by button,
+  paste and drop, find in document, read-only for locked documents, the keyboard map.
+- Step sync with a status in the top bar, retry, flush when the page hides, a warning before
+  closing with unsaved changes.
+- Playwright: `pnpm test:e2e`, 16 journeys in Chromium against a fake backend; added to CI.
+
+**Decisions**
+
+- See "What was built" in `docs/plan/05-editor.md` for the differences from the plan: sync
+  by diff against what the server holds, `lastSyncTimestamp` from the loaded steps, changes
+  stamped in server time, the title saved through its step, no Tab indentation, a "+" menu in
+  place of the side panel.
+- Blocks restored by undo after the server deleted them get new ids: the backend never stores
+  a deleted id again.
+- Leaving a document keeps retrying its unsent changes in the background and says so if they
+  are lost.
+
+**Verified**
+
+- `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test` (317 passed), `pnpm build`
+  and `pnpm test:e2e` (16 passed, also repeated) pass locally, on Node 24 installed with
+  Homebrew on this machine.
+- A fresh review of the branch found one critical and five important defects (undo of a
+  deleted line not saved, undo dropping a finished upload, unsent changes lost on leaving,
+  focus lost on a box line, clock skew reviving deletions, `---` eating the text after it);
+  all fixed with tests.
+- Not verified: nothing has run against a real backend; Firefox and Safari (IME, caret) were
+  not tried.
+
+**Next**
+
+- Run the editor against a backend.
+- Deferred findings of the review: undo after a server update re-sends the old version; a
+  local deletion not yet sent can be undone by a server update; Safari IME Enter; merging a
+  multi-line code block into a paragraph splits it on the next key; a failed upload moves the
+  caret; link cards from other devices are described again; link-card `href` not passed
+  through `safeHref`; pasted steps may carry a second title; drop handler `JSON.parse` without
+  try/catch; no maximum wait on the 500 ms debounce; reopening right after leaving can read
+  stale content; `keepalive` for the flush on page close.
+- M5 — `docs/plan/06-document-options.md`.
+
+---
+
 ## 2026-11-16 — M2 — App shell and document menu
 
 Implements `docs/plan/04-shell-and-document-menu.md`, except import / export (M7).

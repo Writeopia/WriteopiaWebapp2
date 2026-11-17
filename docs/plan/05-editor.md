@@ -232,35 +232,62 @@ wins), as in the other clients. No live collaboration.
 - e2e (Playwright, real browser caret): typing, Enter/Backspace across blocks, arrow navigation,
   paste, undo/redo, IME composition smoke test, reload persists.
 
+## What was built
+
+| Module (`app/features/editor/`) | Contents                                                                                                      |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `state/`                        | Types, block helpers, span maths, line and slash commands, reducer, history, store, Markdown, search          |
+| `sync/`                         | `StepSync` (diff against what the server holds, 500 ms quiet, 3 tries, status) and `useDocumentSync`          |
+| `dom/`                          | Caret offsets, spans to HTML, the key map (pure), the clipboard (Markdown + `application/x-writeopia-steps`)  |
+| `blocks/`                       | `EditableText` (one `contenteditable` per text block) and `BlockContent` (every block type)                   |
+| `components/`                   | The editor screen, the canvas, the format toolbar, the slash menu, the find bar, the link dialog, the top bar |
+| `api.ts`                        | Step sync, image upload, link card description                                                                |
+
+Differences from the plan above:
+
+- Sync compares the blocks with what the server holds instead of following each `LastEdit`
+  variant: no edit can be missed, and an edit made during a request goes in the next one.
+  `lastEdit` is kept only to group typing in the history.
+- `lastSyncTimestamp` starts at the newest `lastUpdatedAt` of the loaded steps: the backend
+  refuses to delete a step changed after it, so 0 would refuse every deletion.
+- The title is saved through its step: the backend copies the title step's text into the
+  document. No separate metadata request; the menu is patched locally.
+- The focus and the block selection are kept by step id, not by position.
+- Enter on an empty list item ends the list (this plan); the Swift app adds another item.
+- No Tab indentation: the SDK has no nesting.
+- The side panel is not built (06). A "+" menu in the top bar carries the block actions:
+  title / subtitle / heading, checkbox, list, code, box, card, divider, image, page.
+- Not yet: ask AI, accept AI (07), equation (M8) shortcuts; comments (M8) only render their span.
+
 ## Tasks
 
 M3 — core
 
-- [ ] State types, reducer skeleton, store
-- [ ] Load document and render title + text blocks
-- [ ] `dom/caret.ts`, text input → `LineEdition`, composition handling
-- [ ] Enter / Backspace / Delete / merge / split with spans
-- [ ] Arrow navigation between blocks
-- [ ] Span maths + selection toolbar (bold, italic, underline, highlights)
-- [ ] Links (dialog, open, auto-detect)
-- [ ] Line commands and slash menu
-- [ ] Blocks: headings, checkbox, bullet list, code block, divider, box, card
-- [ ] Undo / redo
-- [ ] Step sync (buffer, debounce, retry, status indicator), metadata save
-- [ ] Reducer and span test suites
+- [x] State types, reducer skeleton, store
+- [x] Load document and render title + text blocks
+- [x] `dom/caret.ts`, text input → `LineEdition`, composition handling
+- [x] Enter / Backspace / Delete / merge / split with spans
+- [x] Arrow navigation between blocks
+- [x] Span maths + selection toolbar (bold, italic, underline, highlights)
+- [x] Links (dialog, open, auto-detect)
+- [x] Line commands and slash menu
+- [x] Blocks: headings, checkbox, bullet list, code block, divider, box, card
+- [x] Undo / redo
+- [x] Step sync (buffer, debounce, retry, status indicator), metadata save
+- [x] Reducer and span test suites
 
 M4 — complete
 
-- [ ] Image block + upload (button, paste, drop)
-- [ ] Document link block + "add page"
-- [ ] Link card block + description
-- [ ] Multi-block selection (drag box, shift+arrows) and its actions
-- [ ] Copy / cut / paste (custom MIME + Markdown)
-- [ ] Drag-and-drop reordering
-- [ ] Find in document
-- [ ] Read-only mode
-- [ ] Keyboard shortcut map
-- [ ] Playwright editor suite
+- [x] Image block + upload (button, paste, drop)
+- [x] Document link block + "add page"
+- [x] Link card block + description
+- [x] Multi-block selection (drag box, shift+arrows) and its actions
+- [x] Copy / cut / paste (custom MIME + Markdown)
+- [x] Drag-and-drop reordering
+- [x] Find in document
+- [x] Read-only mode
+- [x] Keyboard shortcut map
+- [x] Playwright editor suite
 
 M8 — advanced blocks
 

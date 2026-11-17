@@ -38,6 +38,8 @@ export class FakeBackend {
   readonly syncs: { changes: { storyStep: Step; position: string }[]; deletions: string[] }[] = [];
   readonly uploads: string[] = [];
   locked = false;
+  /** Like the real backend: a deleted step id is never stored again. */
+  readonly tombstones = new Set<string>();
 
   constructor(
     readonly documentId: string,
@@ -100,9 +102,13 @@ export class FakeBackend {
       const body = request.postDataJSON() as (typeof this.syncs)[number];
       this.syncs.push(body);
       for (const change of body.changes) {
+        if (this.tombstones.has(change.storyStep.id)) continue;
         this.steps.set(change.storyStep.id, { ...change.storyStep, position: change.position });
       }
-      for (const id of body.deletions) this.steps.delete(id);
+      for (const id of body.deletions) {
+        this.steps.delete(id);
+        this.tombstones.add(id);
+      }
       return json({ serverTimestamp: Date.now(), updatedSteps: [], deletedIds: [] });
     }
     if (path === "/media/upload") {

@@ -2,7 +2,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { StoreApi } from "zustand";
 
+import { t } from "~/core/i18n";
 import type { Document, FolderContents } from "~/core/models";
+import { showToast } from "~/core/ui";
 import { patchDocument } from "~/features/menu/cache";
 import { menuKeys } from "~/features/menu/queries";
 
@@ -29,6 +31,7 @@ export function useDocumentSync(
   const syncRef = useRef<StepSync | null>(null);
 
   useEffect(() => {
+    let closed = false;
     const sync = new StepSync(
       {
         documentId: document.id,
@@ -38,7 +41,11 @@ export function useDocumentSync(
           store
             .getState()
             .dispatch({ type: "serverUpdate", steps, deletedIds, keepIds }, { history: false }),
-        onStatus: setStatus,
+        onStatus: (next) => {
+          if (!closed) setStatus(next);
+        },
+        onRevived: (ids) =>
+          store.getState().dispatch({ type: "renewIds", ids }, { history: false }),
       },
       ordered(store.getState().state),
     );
@@ -89,9 +96,12 @@ export function useDocumentSync(
         clearTimeout(titleTimer);
         showTitle(title);
       }
-      // Leaving the document sends what waits, then the menu reads the lists again.
-      void sync.flush().finally(() => {
-        sync.stop();
+      // Leaving the document sends what waits, retrying as while it was open, then the
+      // menu reads the lists again. Changes that never get through are said to be lost.
+      closed = true;
+      void sync.finish().then((saved) => {
+        if (!saved)
+          showToast(t("editorLeftUnsaved", { title: title || t("untitled") }), { kind: "error" });
         void queryClient.invalidateQueries({ queryKey: menuKeys.all(workspaceId) });
       });
     };

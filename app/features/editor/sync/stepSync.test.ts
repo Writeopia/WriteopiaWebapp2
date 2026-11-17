@@ -28,6 +28,7 @@ function setup(
 ) {
   const requests: StepSyncRequest[] = [];
   const statuses: SyncStatus[] = [];
+  const revived: string[] = [];
   const updates: [StoryStep[], string[], ReadonlySet<string>][] = [];
   const sync = new StepSync(
     {
@@ -42,11 +43,12 @@ function setup(
         apply(sync, steps);
       },
       onStatus: (status) => statuses.push(status),
+      onRevived: (ids) => revived.push(...ids),
       now: () => 500,
     },
     [title, line],
   );
-  return { sync, requests, statuses, updates };
+  return { sync, requests, statuses, updates, revived };
 }
 
 describe("StepSync", () => {
@@ -207,5 +209,60 @@ describe("StepSync", () => {
     expect(updates[0]![2]).toEqual(new Set(["a"]));
     await vi.runAllTimersAsync();
     expect(requests[1]!.changes.map((change) => change.storyStep.text)).toEqual(["local"]);
+  });
+
+  it("asks for a new id for a block that comes back after its deletion was sent", async () => {
+    const { sync, requests, revived } = setup();
+    sync.update([title]);
+    await vi.runAllTimersAsync();
+    expect(requests[0]!.deletions).toEqual(["a"]);
+
+    // An undo brings the line back with its old id, which the server never stores again.
+    sync.update([title, line]);
+    await vi.runAllTimersAsync();
+    expect(revived).toEqual(["a"]);
+    expect(requests).toHaveLength(1);
+  });
+
+  it("stamps changes in the server's time", async () => {
+    let now = 10_000;
+    const requests: StepSyncRequest[] = [];
+    const sync = new StepSync(
+      {
+        documentId: "doc",
+        workspaceId: "ws",
+        send: (request) => {
+          requests.push(request);
+          return Promise.resolve({ serverTimestamp: 7_000, updatedSteps: [], deletedIds: [] });
+        },
+        onServerUpdate: () => undefined,
+        onStatus: () => undefined,
+        onRevived: () => undefined,
+        now: () => now,
+      },
+      [title, line],
+    );
+    sync.update([title, { ...line, text: "b" }]);
+    await vi.runAllTimersAsync();
+    now = 11_000;
+    sync.update([title, { ...line, text: "c" }]);
+    await vi.runAllTimersAsync();
+    // The browser runs 3 s ahead of the server.
+    expect(requests[1]!.requestTimestamp).toBe(8_000);
+    expect(requests[1]!.changes[0]!.storyStep.lastUpdatedAt).toBe(8_000);
+  });
+
+  it("keeps retrying after the editor closed, and says how it ended", async () => {
+    let fail = 2;
+    const { sync, requests } = setup(() =>
+      fail-- > 0
+        ? Promise.reject(new Error("offline"))
+        : Promise.resolve({ serverTimestamp: 1_000, updatedSteps: [], deletedIds: [] }),
+    );
+    sync.update([title, { ...line, text: "ab" }]);
+    const finished = sync.finish();
+    await vi.runAllTimersAsync();
+    await expect(finished).resolves.toBe(true);
+    expect(requests).toHaveLength(3);
   });
 });

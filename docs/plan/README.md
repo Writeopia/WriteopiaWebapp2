@@ -110,17 +110,17 @@ Legend: **M#** is the milestone the feature lands in.
 
 ### Editor — [05](05-editor.md)
 
-- [ ] Load, render, and edit a document; debounced step sync (M3)
-- [ ] Blocks: title, text, H1–H4, checkbox, bullet list, code block, divider, image, document link (page), link card, box, card (M3–M4)
-- [ ] Inline formatting: bold, italic, underline, three highlights, links (M3)
-- [ ] Markdown-style line commands and the `/` slash menu (M3)
-- [ ] Enter / Backspace / merge / split, arrow navigation between blocks (M3)
-- [ ] Undo / redo (M3)
-- [ ] Multi-line selection (drag box, shift+arrows), copy / cut / delete selection (M4)
-- [ ] Drag-and-drop reordering, image drop/paste upload (M4)
-- [ ] Find in document (M4)
+- [x] Load, render, and edit a document; debounced step sync (M3)
+- [x] Blocks: title, text, H1–H4, checkbox, bullet list, code block, divider, image, document link (page), link card, box, card (M3–M4)
+- [x] Inline formatting: bold, italic, underline, three highlights, links (M3)
+- [x] Markdown-style line commands and the `/` slash menu (M3)
+- [x] Enter / Backspace / merge / split, arrow navigation between blocks (M3)
+- [x] Undo / redo (M3)
+- [x] Multi-line selection (drag box, shift+arrows), copy / cut / delete selection (M4)
+- [x] Drag-and-drop reordering, image drop/paste upload (M4)
+- [x] Find in document (M4)
 - [ ] Spreadsheet, equation, drawing blocks (M8)
-- [ ] Read-only / locked document (M4)
+- [x] Read-only / locked document (M4)
 
 ### Document options — [06](06-document-options.md)
 

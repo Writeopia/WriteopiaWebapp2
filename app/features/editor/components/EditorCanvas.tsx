@@ -35,22 +35,50 @@ const BLOCKS_MIME = "application/x-writeopia-blocks";
 
 type DropTarget = { id: string; after: boolean };
 
-/** Box and card decorations draw one container around the consecutive blocks that have them. */
-type Group = { kind: "box" | "card" | null; blocks: Block[] };
+type GroupKind = "box" | "card";
 
-function groups(blocks: Block[]): Group[] {
-  const result: Group[] = [];
-  for (const block of blocks) {
-    const kind = hasTag(block, Tags.HIGH_LIGHT_BLOCK)
-      ? "box"
-      : hasTag(block, Tags.CARD_BLOCK)
-        ? "card"
-        : null;
-    const last = result[result.length - 1];
-    if (last && kind !== null && last.kind === kind) last.blocks.push(block);
-    else result.push({ kind, blocks: [block] });
-  }
-  return result;
+/**
+ * Box and card decorations draw one container around the consecutive blocks that have them.
+ * Each row draws its own part (top, middle, bottom), so a block leaving or joining a group is
+ * never drawn again from scratch and keeps the caret.
+ */
+type GroupPart = { kind: GroupKind; first: boolean; last: boolean } | null;
+
+function kindOf(block: Block): GroupKind | null {
+  if (hasTag(block, Tags.HIGH_LIGHT_BLOCK)) return "box";
+  if (hasTag(block, Tags.CARD_BLOCK)) return "card";
+  return null;
+}
+
+function groupParts(blocks: Block[]): GroupPart[] {
+  return blocks.map((block, index) => {
+    const kind = kindOf(block);
+    if (!kind) return null;
+    const before = blocks[index - 1];
+    const after = blocks[index + 1];
+    return {
+      kind,
+      first: !before || kindOf(before) !== kind,
+      last: !after || kindOf(after) !== kind,
+    };
+  });
+}
+
+function groupClasses(part: GroupPart): string | false {
+  if (!part) return false;
+  const shape = cn(
+    "mx-0 px-3",
+    part.first && "mt-1 rounded-t-lg pt-2",
+    part.last && "mb-1 rounded-b-lg pb-2",
+  );
+  return part.kind === "box"
+    ? cn(shape, "bg-highlight/60")
+    : cn(
+        shape,
+        "border-x border-card-border bg-card-bg",
+        part.first && "border-t",
+        part.last && "border-b",
+      );
 }
 
 /**
@@ -276,7 +304,9 @@ export function EditorCanvas() {
     if (row) event.dataTransfer.setDragImage(row, 0, 0);
   };
 
-  const row = (block: Block): ReactNode => {
+  const parts = groupParts(blocks);
+
+  const row = (block: Block, index: number): ReactNode => {
     const selected = state.selectedIds.has(block.id);
     const title = isTitle(block);
     return (
@@ -286,6 +316,7 @@ export function EditorCanvas() {
         data-selected={selected || undefined}
         className={cn(
           "group relative -mx-2 rounded-md px-2",
+          groupClasses(parts[index] ?? null),
           selected && "bg-selected-bg",
           title && "mb-4",
         )}
@@ -351,22 +382,7 @@ export function EditorCanvas() {
       onDrop={onDrop}
       onPointerDown={state.readOnly ? undefined : dragBox.onPointerDown}
     >
-      {groups(blocks).map((group) =>
-        group.kind === null ? (
-          group.blocks.map(row)
-        ) : (
-          <div
-            key={`group-${group.blocks[0]!.id}`}
-            data-group={group.kind}
-            className={cn(
-              "my-1 rounded-lg px-3 py-2",
-              group.kind === "box" ? "bg-highlight/60" : "border border-card-border bg-card-bg",
-            )}
-          >
-            {group.blocks.map(row)}
-          </div>
-        ),
-      )}
+      {blocks.map(row)}
 
       {!state.readOnly && (
         <button

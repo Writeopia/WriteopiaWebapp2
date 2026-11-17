@@ -73,6 +73,23 @@ export class History {
     return snapshot;
   }
 
+  /**
+   * Applies a change that arrived on its own (an upload ending, a description written) to
+   * every snapshot holding the block, so going back in the history does not take it away.
+   */
+  patch(id: string, change: (block: Block) => Block) {
+    const patchOne = (snapshot: Snapshot): Snapshot => {
+      const position = snapshot.order.find((each) => snapshot.blocks[each]!.id === id);
+      if (position === undefined) return snapshot;
+      return {
+        ...snapshot,
+        blocks: { ...snapshot.blocks, [position]: change(snapshot.blocks[position]!) },
+      };
+    };
+    this.back = this.back.map(patchOne);
+    this.forward = this.forward.map(patchOne);
+  }
+
   clear() {
     this.back = [];
     this.forward = [];

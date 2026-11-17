@@ -261,6 +261,7 @@ export const en = {
   editorSaved: "Saved",
   editorSaving: "Saving…",
   editorSaveFailed: "Not saved.",
+  editorLeftUnsaved: "The last changes to “{title}” could not be saved.",
   createDocumentFailed: "The document could not be created.",
   createFolderFailed: "The folder could not be created.",
   saveFailed: "The change could not be saved.",

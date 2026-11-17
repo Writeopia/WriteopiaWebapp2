@@ -297,3 +297,37 @@ test("a locked document is read only", async ({ page }) => {
   await expect(page.getByText("Locked")).toBeVisible();
   await expect(block(page, "First")).toHaveAttribute("contenteditable", "false");
 });
+
+test("Backspace at the start of a box line keeps the caret in it", async ({ page }) => {
+  const backend = new FakeBackend(DOCUMENT_ID, [
+    titleStep("Notes"),
+    step("a", "0001000001", { text: "First" }),
+    step("b", "0001000002", { text: "Boxed", tags: [{ tag: "HIGH_LIGHT_BLOCK", position: 0 }] }),
+  ]);
+  await open(page, backend);
+
+  await block(page, "Boxed").click();
+  await page.keyboard.press("Home");
+  await page.keyboard.press("Backspace");
+  await page.keyboard.type("Z");
+  await expect.poll(() => backend.texts()).toEqual(["Notes", "First", "ZBoxed"]);
+  await expect.poll(() => backend.steps.get("b")?.tags).toEqual([]);
+});
+
+test("a line brought back by undo after its deletion was saved is saved again", async ({
+  page,
+}) => {
+  const backend = twoLines();
+  await open(page, backend);
+
+  await block(page, "First").click();
+  await page.keyboard.press("End");
+  await page.keyboard.press("Delete");
+  await expect.poll(() => backend.texts()).toEqual(["Notes", "FirstSecond"]);
+  await saved(page);
+
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect.poll(() => backend.texts()).toEqual(["Notes", "First", "Second"]);
+  await page.reload();
+  await expect(block(page, "Second")).toBeVisible();
+});

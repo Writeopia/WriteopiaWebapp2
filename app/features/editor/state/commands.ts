@@ -32,12 +32,19 @@ export const LINE_COMMANDS: readonly LineCommand[] = [
 
 /**
  * The command just completed at the start of [text]: the caret must be right after it, which
- * is where it is when its last character was the one typed.
+ * is where it is when its last character was the one typed. A command that does not end in
+ * a space must stand alone or be followed by one, like TextCommandHandler: "---" typed before
+ * "hello" is text.
  */
 export function lineCommandAt(text: string, cursor: number): LineCommand | null {
   return (
     LINE_COMMANDS.find(
-      (command) => cursor === command.text.length && text.startsWith(command.text),
+      (command) =>
+        cursor === command.text.length &&
+        text.startsWith(command.text) &&
+        (command.text.endsWith(" ") ||
+          text.length === command.text.length ||
+          text[command.text.length] === " "),
     ) ?? null
   );
 }

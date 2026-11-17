@@ -65,4 +65,20 @@ describe("editor store", () => {
       .dispatch({ type: "updateBlock", id: "s1", changes: { text: "x" } }, { history: false });
     expect(store.getState().canUndo).toBe(false);
   });
+
+  it("keeps what arrived on its own when an undo goes back over it", () => {
+    const store = loaded();
+    const { dispatch } = store.getState();
+    dispatch({ type: "updateBlock", id: "s1", changes: { url: null, ephemeral: true } });
+    dispatch({ type: "input", id: "s1", text: "a", cursor: 1 });
+    // The upload ends after the typing was recorded.
+    dispatch(
+      { type: "updateBlock", id: "s1", changes: { url: "https://img", ephemeral: false } },
+      { history: false },
+    );
+
+    store.getState().undo();
+    const block = ordered(store.getState().state)[1]!;
+    expect(block).toMatchObject({ text: "", url: "https://img", ephemeral: false });
+  });
 });

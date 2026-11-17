@@ -1,3 +1,4 @@
+import { generateId } from "~/core/id";
 import {
   type Document,
   isUiOnlyStoryType,
@@ -75,6 +76,8 @@ export type Action =
   | { type: "pasteBlocks"; caret: Caret; blocks: Block[] }
   | { type: "updateBlock"; id: string; changes: Partial<Block> }
   | { type: "removeBlock"; id: string }
+  /** New ids for blocks whose ids the server will not take again. */
+  | { type: "renewIds"; ids: string[] }
   /** Moves the blocks to right after the block with [afterId]; null puts them first. */
   | { type: "move"; ids: string[]; afterId: string | null }
   | { type: "select"; ids: string[] }
@@ -171,6 +174,8 @@ export function reducer(state: EditorState, action: Action): EditorState {
       return replace(state, action.id, (block) => ({ ...block, ...action.changes }), "structure");
     case "removeBlock":
       return removeIds(state, [action.id]);
+    case "renewIds":
+      return renewIds(state, action.ids);
     case "move":
       return move(state, action.ids, action.afterId);
     case "deleteSelected":
@@ -440,7 +445,9 @@ function applyLineCommand(
   length: number,
 ): EditorState {
   const text = textOf(block);
-  const rest = text.slice(length);
+  // The space that ends a command standing before text goes with it.
+  const cut = text[length] === " " && !text.slice(0, length).endsWith(" ") ? length + 1 : length;
+  const rest = text.slice(cut);
   const base: Block = { ...block, text: rest, spans: adjustSpans(block.spans, text, rest, 0) };
   return applyEffect(state, position, base, effect, 0);
 }
@@ -471,8 +478,14 @@ function applyEffect(
 
   if (changed.type.number === StoryTypes.DIVIDER.number) {
     target.blocks[position] = { ...changed, text: null, spans: [], tags: [], checked: null };
-    const lineBelow = textLineAfter(target, position);
-    const below = lineBelow ?? placeAfter(target, position, [newBlock(StoryTypes.TEXT)])[0]!;
+    // A divider has no text: what the line held goes to a new line below it.
+    const rest = textOf(block);
+    const lineBelow = rest === "" ? textLineAfter(target, position) : null;
+    const below =
+      lineBelow ??
+      placeAfter(target, position, [
+        newBlock(StoryTypes.TEXT, { text: rest, spans: block.spans }),
+      ])[0]!;
     return withPlacement(state, target, caretTo(state, target.blocks[below]!.id, 0));
   }
 
@@ -918,6 +931,32 @@ function removeIds(state: EditorState, ids: string[]): EditorState {
     ? caretTo(state, focusId, textOf(find(state, focusId)!.block).length)
     : { focus: null };
   return withPlacement(state, target, { ...caret, selectedIds: new Set() });
+}
+
+function renewIds(state: EditorState, ids: string[]): EditorState {
+  const renewed = new Map(ids.map((id) => [id, generateId()]));
+  const blocks = { ...state.blocks };
+  let changed = false;
+  for (const position of state.order) {
+    const next = renewed.get(blocks[position]!.id);
+    if (next) {
+      blocks[position] = { ...blocks[position]!, id: next };
+      changed = true;
+    }
+  }
+  if (!changed) return state;
+
+  const focusId = state.focus ? renewed.get(state.focus.id) : undefined;
+  return {
+    ...state,
+    blocks,
+    // The renewed block is drawn again: the caret goes back into it.
+    ...(focusId && state.focus
+      ? { focus: { ...state.focus, id: focusId }, focusRequest: state.focusRequest + 1 }
+      : {}),
+    selectedIds: new Set([...state.selectedIds].map((id) => renewed.get(id) ?? id)),
+    slash: null,
+  };
 }
 
 /** Moves blocks, in their order, to right after another one. The title stays first. */

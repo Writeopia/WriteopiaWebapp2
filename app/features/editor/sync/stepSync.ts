@@ -34,6 +34,11 @@ export type StepSyncOptions = {
    */
   onServerUpdate: (steps: StoryStep[], deletedIds: string[], keepIds: ReadonlySet<string>) => void;
   onStatus: (status: SyncStatus) => void;
+  /**
+   * Blocks back with the id of a step deleted on the server (an undo, a redo): the server
+   * never stores that id again, so the editor must give them new ones.
+   */
+  onRevived: (ids: string[]) => void;
   debounceMs?: number;
   maxFailures?: number;
   now?: () => number;
@@ -61,6 +66,10 @@ export class StepSync {
   private failures = 0;
   private status: SyncStatus = "saved";
   private stopped = false;
+  /** Ids the server deleted: it ignores any later change to them. */
+  private gone = new Set<string>();
+  /** Server time minus browser time, from the last answer: changes are stamped in server time. */
+  private clockOffset = 0;
 
   /** [loaded]: the blocks the editor opened with, which the server holds. */
   constructor(options: StepSyncOptions, loaded: readonly Block[]) {
@@ -79,6 +88,12 @@ export class StepSync {
   /** The blocks of the document changed; they are sent after the quiet time. */
   update(blocks: Block[]) {
     if (this.stopped) return;
+    const revived = blocks.filter((block) => !block.ephemeral && this.gone.has(block.id));
+    if (revived.length > 0) {
+      // The editor renews their ids and calls again.
+      this.options.onRevived(revived.map((block) => block.id));
+      return;
+    }
     this.blocks = blocks;
     const { changes, deletions } = this.changes();
     if (changes.length === 0 && deletions.length === 0) {
@@ -113,6 +128,32 @@ export class StepSync {
     return new Set(this.changes().changes.map((change) => change.storyStep.id));
   }
 
+  /**
+   * The editor closed: sends what waits, retrying as usual, then stops. True when everything
+   * reached the server, false when it gave up.
+   */
+  finish(): Promise<boolean> {
+    return new Promise((resolve) => {
+      const done = (saved: boolean) => {
+        this.stop();
+        resolve(saved);
+      };
+      const onStatus = this.options.onStatus;
+      this.options.onStatus = (status) => {
+        onStatus(status);
+        if (status === "saved") done(true);
+        else if (status === "failed") done(false);
+      };
+      if (!this.hasUnsaved()) {
+        done(true);
+        return;
+      }
+      void this.flush().then(() => {
+        if (!this.stopped && !this.hasUnsaved()) done(true);
+      });
+    });
+  }
+
   stop() {
     this.stopped = true;
     this.clearTimer();
@@ -123,7 +164,7 @@ export class StepSync {
     const changes: StepSyncRequest["changes"] = [];
 
     for (const block of this.blocks) {
-      if (block.ephemeral) continue;
+      if (block.ephemeral || this.gone.has(block.id)) continue;
       present.add(block.id);
       const known = this.known.get(block.id);
       if (known?.key !== keyOf(block, block.position)) {
@@ -170,7 +211,7 @@ export class StepSync {
 
   private async send(changes: StepSyncRequest["changes"], deletions: string[]) {
     this.setStatus("saving");
-    const requestTimestamp = this.options.now();
+    const requestTimestamp = this.options.now() + this.clockOffset;
     const stamped = changes.map((change) => ({
       ...change,
       storyStep: { ...change.storyStep, lastUpdatedAt: requestTimestamp },
@@ -200,13 +241,17 @@ export class StepSync {
 
     this.failures = 0;
     this.lastSyncTimestamp = response.serverTimestamp;
+    this.clockOffset = response.serverTimestamp - this.options.now();
     for (const change of changes) {
       this.known.set(change.storyStep.id, {
         position: change.position,
         key: JSON.stringify([change.position, contentOf(change.storyStep)]),
       });
     }
-    for (const id of deletions) this.known.delete(id);
+    for (const id of deletions) {
+      this.known.delete(id);
+      this.gone.add(id);
+    }
 
     // What changed elsewhere goes to the editor, except over the blocks edited here while
     // the request was out: those win and are sent next.
@@ -216,6 +261,7 @@ export class StepSync {
       this.known.set(step.id, { position: step.position, key: keyOf(step, step.position) });
     }
     for (const id of response.deletedIds) {
+      this.gone.add(id);
       if (!keep.has(id)) this.known.delete(id);
     }
     if (!this.stopped && (response.updatedSteps.length > 0 || response.deletedIds.length > 0)) {

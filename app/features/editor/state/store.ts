@@ -87,6 +87,8 @@ export function createEditorStore(initial: EditorState = emptyState): StoreApi<E
 
         if (action.type === "load") {
           history.clear();
+        } else if (!record && action.type === "updateBlock") {
+          history.patch(action.id, (block) => ({ ...block, ...action.changes }));
         } else if (
           record &&
           action.type !== "serverUpdate" &&

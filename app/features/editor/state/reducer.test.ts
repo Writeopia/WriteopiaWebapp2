@@ -177,6 +177,56 @@ describe("line commands", () => {
     expect(state.focus).toMatchObject({ id: "s1", start: 0 });
   });
 
+  it("fire before existing text only when a space follows them", () => {
+    const divider = run(editor({ text: "hello" }), {
+      type: "input",
+      id: "s1",
+      text: "---hello",
+      cursor: 3,
+    });
+    expect(texts(divider)).toEqual(["Title", "---hello"]);
+    const checkbox = run(editor({ text: "milk" }), {
+      type: "input",
+      id: "s1",
+      text: "[]milk",
+      cursor: 2,
+    });
+    expect(block(checkbox, "s1").type).toEqual(StoryTypes.TEXT);
+    const spaced = run(editor({ text: " milk" }), {
+      type: "input",
+      id: "s1",
+      text: "[] milk",
+      cursor: 2,
+    });
+    expect(block(spaced, "s1")).toMatchObject({ type: StoryTypes.CHECK_ITEM, text: "milk" });
+  });
+
+  it("--- before a space keeps the text on the line below the divider", () => {
+    const state = run(editor({ text: " hello" }), {
+      type: "input",
+      id: "s1",
+      text: "--- hello",
+      cursor: 3,
+    });
+    expect(ordered(state).map((b) => [b.type.name, b.text])).toEqual([
+      ["title", "Title"],
+      ["divider", null],
+      ["message", "hello"],
+    ]);
+  });
+
+  it("renews the ids of blocks the server will not store again", () => {
+    const state = run(
+      editor({ text: "a" }),
+      { type: "focus", focus: { id: "s1", start: 1, end: 1 } },
+      { type: "renewIds", ids: ["s1"] },
+    );
+    const renewed = ordered(state)[1]!;
+    expect(renewed.id).not.toBe("s1");
+    expect(renewed.text).toBe("a");
+    expect(state.focus).toMatchObject({ id: renewed.id, start: 1 });
+  });
+
   it("--- makes a divider and moves the caret to a new line below", () => {
     const state = typed("---");
     const blocks = ordered(state);
