@@ -88,9 +88,9 @@ export function createEditorStore(initial: EditorState = emptyState): StoreApi<E
         if (action.type === "load") {
           history.clear();
         } else if (action.type === "suggestAccept") {
-          // A kept answer is undone in one step, back to the document before it.
-          const before = state.suggestion!.before;
-          history.push({ order: before.order, blocks: before.blocks, focus: state.focus });
+          // A kept answer is undone in one step, back to the document as it is now without
+          // the answer: what changed elsewhere meanwhile stays.
+          history.push(snapshot(reducer(state, { type: "suggestDiscard" })));
         } else if (action.type.startsWith("suggest")) {
           // An answer still suggested is not part of the history.
         } else if (!record && action.type === "updateBlock") {

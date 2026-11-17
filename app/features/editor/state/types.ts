@@ -47,8 +47,6 @@ export type Suggestion = {
   copies: Record<string, string>;
   /** True while the answer still arrives. */
   streaming: boolean;
-  /** The document before the answer, for the undo of a kept answer. */
-  before: { order: string[]; blocks: Record<string, Block> };
 };
 
 export type EditorState = {

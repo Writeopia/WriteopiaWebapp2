@@ -5,7 +5,7 @@ import { rankAt, rankConfig } from "~/core/rank/rank";
 
 import { aDocument, aStep } from "../../../../test/fixtures";
 import { hasTag, newBlock } from "./blocks";
-import { type Action, documentContent, emptyState, ordered, reducer } from "./reducer";
+import { type Action, documentContent, emptyState, ordered, reducer, toStep } from "./reducer";
 import { createEditorStore } from "./store";
 import type { EditorState } from "./types";
 
@@ -164,7 +164,76 @@ describe("AI suggestions in the editor", () => {
   });
 });
 
+describe("AI suggestions and the work around them", () => {
+  it("still takes a finished upload and a failed one while a suggestion stands", () => {
+    const image = { id: "img", type: StoryTypes.IMAGE, text: null };
+    const begun = run(editor({ text: "a" }, image, { text: "b" }), {
+      type: "suggestBegin",
+      hideIds: [],
+      afterId: "s1",
+    });
+    const uploaded = reducer(begun, {
+      type: "updateBlock",
+      id: "img",
+      changes: { url: "https://cdn/p.png", ephemeral: false },
+    });
+    expect(ordered(uploaded).find((block) => block.id === "img")?.url).toBe("https://cdn/p.png");
+    const removed = reducer(begun, { type: "removeBlock", id: "img" });
+    expect(ordered(removed).some((block) => block.id === "img")).toBe(false);
+  });
+
+  it("keeps a replaced line hidden when the server changes it", () => {
+    const begun = run(
+      editor({ text: "a" }, { text: "b" }),
+      { type: "suggestBegin", hideIds: ["s1"], afterId: "s1" },
+      { type: "suggestUpdate", blocks: [text("A")] },
+    );
+    const hiddenStep = toStep(ordered(begun).find((block) => block.id === "s1")!);
+    const updated = reducer(begun, {
+      type: "serverUpdate",
+      steps: [{ ...hiddenStep, text: "a, edited elsewhere" }],
+      deletedIds: [],
+      keepIds: new Set(),
+    });
+    expect(shown(updated)).toEqual(["Title", "A", "b"]);
+    expect(reducer(updated, { type: "suggestDiscard" }).order.length).toBe(3);
+    expect(shown(reducer(updated, { type: "suggestDiscard" }))).toEqual([
+      "Title",
+      "a, edited elsewhere",
+      "b",
+    ]);
+  });
+});
+
 describe("AI suggestions and the history", () => {
+  it("undoes a kept answer back to the document as it was at Keep, server changes included", () => {
+    const store = createEditorStore();
+    const content = [
+      aStep({ id: "title", type: StoryTypes.TITLE, text: "Title", position: rankAt(0) }),
+      aStep({ id: "s1", text: "a", position: rankAt(1) }),
+      aStep({ id: "s2", text: "b", position: rankAt(2) }),
+    ];
+    const { dispatch } = store.getState();
+    dispatch({ type: "load", document: aDocument({ content }), readOnly: false });
+    dispatch({ type: "suggestBegin", hideIds: ["s1"], afterId: "s1" });
+    dispatch({ type: "suggestUpdate", blocks: [text("A")] });
+    dispatch({ type: "suggestDone" });
+    const s2 = ordered(store.getState().state).find((block) => block.id === "s2")!;
+    dispatch(
+      {
+        type: "serverUpdate",
+        steps: [{ ...s2, text: "b from elsewhere" }],
+        deletedIds: [],
+        keepIds: new Set(),
+      },
+      { history: false },
+    );
+    dispatch({ type: "suggestAccept" });
+
+    store.getState().undo();
+    expect(shown(store.getState().state)).toEqual(["Title", "a", "b from elsewhere"]);
+  });
+
   it("undoes a kept answer in one step, back to the lines before it", () => {
     const store = createEditorStore();
     const content = [

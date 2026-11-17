@@ -19,6 +19,62 @@ Entry template:
 
 ---
 
+## 2026-11-17 — M6 — AI
+
+Implements `docs/plan/07-ai.md`, except the model picker, equations and presentations (M8).
+
+**Done**
+
+- `app/features/ai`: the SSE reader, the AI endpoints, the document rewrite protocol
+  (`DocumentRewrite.kt`), the command runner (add, replace, rewrite), the quick actions, the
+  writing agent (`WritingAgentController.kt`) and its action executor, the picture for a
+  paragraph.
+- Editor: an AI answer is a suggestion. The lines it replaces are hidden but still saved, and
+  the suggested blocks are not saved until Keep (⌘/Ctrl+Enter); Discard (Esc) puts the lines back.
+  A kept answer is undone in one step.
+- UI: an "Ask AI" button and ⌘J / Ctrl+J, the bar under the document (field, progress, Stop,
+  Keep / Discard), an AI tab in the side panel (command, quick actions with "Apply to", picture
+  for the paragraph, tokens used), the suggestions box, and the folder and tag suggestion dialogs.
+- FREE users get the premium dialog. When the backend has no AI, the entry points are disabled
+  with the reason. A used-up quota (429) gets its own message.
+- Playwright: an AI answer saved only once kept, and kept after a reload.
+
+**Decisions**
+
+- See "What was built" in `docs/plan/07-ai.md`. The model picker is not built because the
+  backend lists no cloud models.
+- Every AI answer, the writing agent's included, goes through Keep / Discard.
+
+**Verified**
+
+- `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test` (481 passed), `pnpm build` and
+  `pnpm test:e2e` (19 passed) pass locally, after the review fixes.
+- A fresh review of the branch found one critical and four important defects. All are fixed,
+  each with a test that failed first:
+  - Critical: an image upload that finished during a suggestion was lost.
+  - Important: undo after Keep reverted changes from elsewhere.
+  - Important: a cut-off stream was taken as a whole answer.
+  - Important: Esc and ⌘Enter in dialogs acted on the answer.
+  - Important: a server update showed a replaced line again.
+- Not verified: nothing has run against a real backend or a real Gemini stream; Firefox and
+  Safari were not tried.
+
+**Next**
+
+- Run the AI against a backend: the stream format, the 403 / 429 bodies, the latency.
+- Deferred review minors:
+  - A late Discard from a stopped run can hit a new run.
+  - When the server deletes the anchor block, an answer being added moves to the end.
+  - Find counts hidden lines.
+  - An uploading image inside a rewrite stays visible.
+  - The agent rescans the whole document on every change.
+  - Some failure reasons are untranslated.
+  - Every 403 opens the premium dialog.
+  - A writing suggestion is declined even when its run was refused.
+- M7 — `docs/plan/08-settings.md`.
+
+---
+
 ## 2026-11-17 — M5 — Document options
 
 Implements `docs/plan/06-document-options.md`, except comments (M8).

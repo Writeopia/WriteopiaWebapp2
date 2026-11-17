@@ -49,12 +49,23 @@ describe("readAnswer", () => {
   });
 
   it("reads a last event without its blank line", async () => {
-    expect(await collect(bytes('data: {"response":"end","done":false}'))).toEqual(["end"]);
+    expect(await collect(bytes('data: {"response":"end","done":true}'))).toEqual(["end"]);
+  });
+
+  it("fails an answer cut off before its last event", async () => {
+    await expect(collect(bytes(line({ response: "half", done: false })))).rejects.toBeInstanceOf(
+      AiStreamError,
+    );
   });
 
   it("skips lines that are not data and events without a response", async () => {
     const answers = await collect(
-      bytes(": keep-alive\n", "event: x\n", line({ done: false }), line({ response: "a" })),
+      bytes(
+        ": keep-alive\n",
+        "event: x\n",
+        line({ done: false }),
+        line({ response: "a", done: true }),
+      ),
     );
     expect(answers).toEqual(["a"]);
   });

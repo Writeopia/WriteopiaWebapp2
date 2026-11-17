@@ -39,6 +39,7 @@ export function AiBar() {
   useEffect(() => {
     if (!ready) return;
     const onKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || isForSomethingElse(event.target)) return;
       const { dispatch } = store.getState();
       if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
@@ -140,5 +141,14 @@ function Bar({ children }: { children: React.ReactNode }) {
     <div className="shrink-0 border-t border-divider bg-global-bg px-3 py-2">
       <div className="mx-auto flex w-full max-w-3xl items-center gap-2">{children}</div>
     </div>
+  );
+}
+
+/** A key pressed in a dialog or a field is for it, not for the AI's answer. */
+function isForSomethingElse(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  return (
+    target.closest('dialog, [role="dialog"], input, textarea, select, [contenteditable="true"]') !==
+    null
   );
 }

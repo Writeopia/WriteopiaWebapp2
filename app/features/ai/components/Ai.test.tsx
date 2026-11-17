@@ -152,6 +152,26 @@ describe("the AI command bar", () => {
     expect(screen.getByText("Kept by key")).toBeInTheDocument();
   });
 
+  it("leaves the answer alone when Escape or ⌘Enter are for a dialog or a field", async () => {
+    backend({ answer: () => sse("Still here") });
+    renderNotes();
+
+    await askAi("go");
+    await screen.findByText("Keep the AI's answer?");
+    const dialog = document.createElement("div");
+    dialog.setAttribute("role", "dialog");
+    const field = document.createElement("input");
+    dialog.append(field);
+    document.body.append(dialog);
+    field.focus();
+
+    await userEvent.keyboard("{Escape}");
+    await userEvent.keyboard("{Control>}{Enter}{/Control}");
+
+    expect(screen.getByText("Keep the AI's answer?")).toBeInTheDocument();
+    dialog.remove();
+  });
+
   it("says when the tokens of the month are used up", async () => {
     backend({ answer: () => HttpResponse.json({ error: "Quota" }, { status: 429 }) });
     renderNotes();

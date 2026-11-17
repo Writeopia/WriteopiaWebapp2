@@ -98,6 +98,12 @@ export type Action =
   | { type: "suggestAccept" }
   | { type: "suggestDiscard" };
 
+const LANDS_DURING_SUGGESTION: ReadonlySet<Action["type"]> = new Set([
+  "updateBlock",
+  "removeBlock",
+  "renewIds",
+]);
+
 export const emptyState: EditorState = {
   documentId: "",
   order: [],
@@ -154,8 +160,10 @@ export function reducer(state: EditorState, action: Action): EditorState {
       return suggestDiscard(state);
   }
 
-  // A suggestion is kept or discarded before the document changes again.
-  if (state.readOnly || state.suggestion) return state;
+  if (state.readOnly) return state;
+  // A suggestion is kept or discarded before the writer changes the document again; the work
+  // that finishes on its own (an upload, a description, a renewed id) still lands.
+  if (state.suggestion && !LANDS_DURING_SUGGESTION.has(action.type)) return state;
 
   switch (action.type) {
     case "input":
@@ -1061,12 +1069,14 @@ function serverUpdate(
       if (sameStep(found.block, step)) continue;
       unplace(target, found.position);
     }
+    // A line an AI answer replaces stays hidden until the answer is kept or discarded.
+    const hidden = state.suggestion?.hiddenIds.includes(step.id) ?? false;
     let position = step.position;
     if (target.blocks[position]) {
       const index = target.order.indexOf(position);
       position = rankBetween(position, target.order[index + 1] ?? null);
     }
-    place(target, step, position);
+    place(target, hidden ? { ...step, hidden: true } : step, position);
     changed = true;
   }
 
@@ -1130,7 +1140,6 @@ function suggestBegin(state: EditorState, hideIds: string[], afterId: string | n
       ids: [skeleton.id],
       copies: {},
       streaming: true,
-      before: { order: state.order, blocks: state.blocks },
     },
   });
 }

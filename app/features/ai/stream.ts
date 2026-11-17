@@ -49,6 +49,8 @@ export async function* readAnswer(body: ReadableStream<Uint8Array>): AsyncGenera
       }
       if (done) break;
     }
+    // A connection that ends before the last event leaves the answer cut.
+    if (!finished) throw new AiStreamError("The answer was cut off");
   } finally {
     // Stops the request when the reader left before the end, and frees the lock either way.
     await reader.cancel().catch(() => undefined);
