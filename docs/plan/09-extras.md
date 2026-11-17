@@ -68,10 +68,42 @@ minimal; port whatever it shows at the time, or leave a placeholder route if it 
 
 ## Tasks
 
-- [ ] Search dialog (M4)
-- [ ] Site view (M5)
-- [ ] Documents graph (M8)
-- [ ] Drawing block + canvas (M8)
-- [ ] Notifications (M8)
+- [x] Search dialog (M4)
+- [x] Site view (M5)
+- [x] Documents graph (M8)
+- [x] Drawing block + canvas (M8)
+- [x] Notifications (M8)
 - [ ] e2e suite, accessibility, performance (M9)
 - [ ] Cut-over (M9)
+
+## What was built
+
+| Module                               | Contents                                                                                        |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `app/features/search/`               | `snippet.ts` (port of `SearchSnippet.kt` and `FtsQuery.tokens`), `api.ts`, `SearchDialog`       |
+| `app/features/site/` + `routes/site` | `GET /api/site/{id}` without a session, `SitePage` over `editor/components/ReadOnlyDocument`    |
+| `app/features/graph/`                | `layout.ts` (port of `ForceLayout.kt`), `model.ts` (workspace walk, groupings, details), canvas |
+| `app/features/drawing/`              | `model.ts` (DrawingData JSON), `render.ts`, `history.ts`, `api.ts` (equation), dialog, block    |
+| `routes/app/notifications.tsx`       | "No notifications", linked from the side menu                                                   |
+| `core/ui/OfflineBanner.tsx`          | Banner while the browser is offline or a request cannot reach the server                        |
+
+Differences from the plan above:
+
+- **Search**: ⌘K / Ctrl+K and the side menu open it. "Recent" is the 12 most recently updated
+  documents of the workspace (the folder walk the tag view uses). A presentation result opens
+  the document it was made from: the web has no presentations yet. FREE users see the premium
+  message.
+- **Graph**: no `d3-force`; `ForceLayout.kt` is ported, so the look matches the other apps.
+  Groupings: folders and tags. A list of the nodes is kept for the keyboard and screen readers.
+  A dropped node heats the layout to 0.3 so its neighbours settle back (the Compose app stops).
+- **Drawing**: added from the document's actions menu ("Add drawing"); the block offers Edit and
+  Convert to equation (`POST /api/ai/equation/recognize`, the step becomes an `equation`). The
+  JSON is written byte for byte as kotlinx.serialization does, tested against the fixture of
+  `DrawingTests.swift`. The eraser removes pixels from a transparent layer instead of painting
+  the background color.
+- **Site**: the bucket / load-balancer fallback that serves `index.html` for `/site/*` is
+  infrastructure, not in this repo; it still has to be checked before the cut-over.
+- **M9** is not done: no Playwright suite (`@playwright/test` is not installed in this checkout),
+  no accessibility or performance audit, no cut-over. Done from it: route code-splitting (React
+  Router splits per route; the graph is its own chunk), the error boundary (already in
+  `root.tsx`) and the offline banner.

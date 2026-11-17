@@ -6,6 +6,7 @@ import { afterAll, afterEach, beforeAll } from "vitest";
 import { queryClient } from "~/core/query/queryClient";
 import { useToastStore } from "~/core/ui";
 import { useForgotPasswordFlow, useRegisterFlow } from "~/features/auth/flows";
+import { useDrawingDialog } from "~/features/drawing/dialogs";
 import { useMenuDialogs } from "~/features/menu/dialogs";
 import { useDragStore } from "~/features/menu/dnd";
 import { useMenuPreferences } from "~/features/menu/preferences";
@@ -28,6 +29,7 @@ afterEach(() => {
   useDragStore.getState().end();
   useMenuPreferences.getState().reload();
   useShellStore.getState().reload();
+  useDrawingDialog.getState().close();
 });
 
 afterAll(() => server.close());

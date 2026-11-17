@@ -13,6 +13,7 @@ import { DocumentActionsMenu } from "~/features/document-options/components/Docu
 import { DocumentOptionsProvider } from "~/features/document-options/components/DocumentOptionsProvider";
 import { SidePanel } from "~/features/document-options/components/SidePanel";
 import { fontFamily, useEditorFont } from "~/features/document-options/font";
+import { DrawingHost } from "~/features/drawing/components/DrawingHost";
 import { saveDocuments } from "~/features/menu/api";
 import { appPaths } from "~/features/menu/paths";
 import { menuKeys, newDocument } from "~/features/menu/queries";
@@ -228,6 +229,7 @@ export function DocumentEditor({ document, navigation }: DocumentEditorProps) {
                   }}
                 />
               )}
+              <DrawingHost />
             </div>
           </AiProvider>
         </DocumentOptionsProvider>

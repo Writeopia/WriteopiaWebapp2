@@ -17,7 +17,7 @@ import { t } from "~/core/i18n";
 import { queryClient } from "~/core/query/queryClient";
 import { themeInitScript } from "~/core/theme/theme";
 import { useSystemThemeSync } from "~/core/theme/useTheme";
-import { Button, Spinner, Toaster } from "~/core/ui";
+import { Button, OfflineBanner, Spinner, Toaster } from "~/core/ui";
 import { clearSession, paths } from "~/features/auth/session";
 
 import type { Route } from "./+types/root";
@@ -67,6 +67,7 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <OfflineBanner />
       <Outlet />
       <Toaster />
     </QueryClientProvider>

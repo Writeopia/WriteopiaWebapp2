@@ -152,10 +152,10 @@ Legend: **M#** is the milestone the feature lands in.
 
 ### Extras — [09](09-extras.md)
 
-- [ ] Search dialog (documents and presentations) (M4)
-- [ ] Public site view `/site/:documentId` (M5)
-- [ ] Documents graph (M8)
-- [ ] Notifications screen (M8)
+- [x] Search dialog (documents and presentations) (M4)
+- [x] Public site view `/site/:documentId` (M5)
+- [x] Documents graph (M8)
+- [x] Notifications screen (M8)
 
 ## Milestones
 

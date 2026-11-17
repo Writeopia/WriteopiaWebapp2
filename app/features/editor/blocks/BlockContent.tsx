@@ -4,6 +4,7 @@ import { useContext } from "react";
 import { t } from "~/core/i18n";
 import { storyTypeKey } from "~/core/models";
 import { cn, Spinner } from "~/core/ui";
+import { DrawingBlock } from "~/features/drawing/components/DrawingBlock";
 
 import { TitleFrameContext, useEditorActions } from "../components/editorContext";
 import type { Decoration } from "../dom/spansToDom";
@@ -165,8 +166,11 @@ export function BlockContent({ block, readOnly, decorations }: BlockContentProps
         <Placeholder>{textOf(block) || t("editorUnsupportedBlock")}</Placeholder>
       );
 
+    case "DRAWING":
+      return <DrawingBlock block={block} readOnly={readOnly} />;
+
     default:
-      // Spreadsheets, drawings and types this app does not know are kept as they are.
+      // Spreadsheets and types this app does not know are kept as they are.
       return <Placeholder>{t("editorUnsupportedBlock")}</Placeholder>;
   }
 }

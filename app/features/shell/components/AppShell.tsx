@@ -2,7 +2,7 @@ import { type KeyboardEvent, type PointerEvent, type ReactNode, useEffect } from
 import { useLocation, useSearchParams } from "react-router";
 
 import { t } from "~/core/i18n";
-import { Button, Dialog } from "~/core/ui";
+import { SearchDialog } from "~/features/search/components/SearchDialog";
 import { SettingsDialog } from "~/features/settings/components/SettingsDialog";
 
 import { SIDE_MENU_MAX_WIDTH, SIDE_MENU_MIN_WIDTH, useShellStore } from "../store";
@@ -21,6 +21,21 @@ export function AppShell({ children }: { children: ReactNode }) {
   const collapsed = useShellStore((state) => state.collapsed);
   const drawerOpen = useShellStore((state) => state.drawerOpen);
   const setDrawerOpen = useShellStore((state) => state.setDrawerOpen);
+
+  // ⌘K / Ctrl+K opens the search from anywhere in the app.
+  useEffect(() => {
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key.toLowerCase() !== "k" || !(event.metaKey || event.ctrlKey)) return;
+      if (event.altKey || event.shiftKey) return;
+      event.preventDefault();
+      setSearchParams((params) => {
+        params.set("search", "1");
+        return params;
+      });
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [setSearchParams]);
 
   // Going somewhere from the drawer closes it.
   useEffect(() => setDrawerOpen(false), [location.pathname, setDrawerOpen]);
@@ -60,20 +75,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className="h-full min-w-0 flex-1">{children}</main>
 
       {searchParams.has("settings") && <SettingsDialog onClose={() => closeOverPage("settings")} />}
-      {searchParams.has("search") && (
-        <Dialog
-          open
-          onClose={() => closeOverPage("search")}
-          title={t("search")}
-          actions={
-            <Button variant="secondary" onClick={() => closeOverPage("search")}>
-              {t("close")}
-            </Button>
-          }
-        >
-          {t("searchComingSoon")}
-        </Dialog>
-      )}
+      {searchParams.has("search") && <SearchDialog onClose={() => closeOverPage("search")} />}
     </div>
   );
 }

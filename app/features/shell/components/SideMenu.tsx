@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {
+  Bell,
   Bolt,
   ChartScatter,
   ChevronDown,
@@ -122,6 +123,10 @@ export function SideMenu() {
         <NavLink to={appPaths.graph} className={linkClasses}>
           <ChartScatter size={16} aria-hidden />
           {t("documentsGraph")}
+        </NavLink>
+        <NavLink to={appPaths.notifications} className={linkClasses}>
+          <Bell size={16} aria-hidden />
+          {t("notifications")}
         </NavLink>
         <ItemButton icon={Bolt} onClick={() => openOverPage("settings", "account")}>
           {t("settings")}

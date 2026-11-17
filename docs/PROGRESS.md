@@ -19,6 +19,46 @@ Entry template:
 
 ---
 
+## 2026-11-17 — M4/M5/M8 extras — Search, site, graph, drawing, notifications
+
+Implements `docs/plan/09-extras.md` except its M9 part (hardening and cut-over).
+
+**Done**
+
+- Search dialog (⌘K / Ctrl+K): recent documents, debounced search of documents and
+  presentations, snippets with the matches marked, arrows and Enter, premium gating.
+- Public site `/site/:documentId`: no session, no shell, read-only blocks with the header and
+  icon, a not-published page, Retry on server errors; linked documents open as site pages.
+- Documents graph: port of `ForceLayout.kt` on a canvas, folders or tags grouping, pan, zoom
+  (wheel with ⌘/Ctrl and buttons), drag, a card per node, double-click or Open to go there.
+- Drawing block: preview, drawing dialog (pen, highlighter, eraser, 11 colors, 5 widths, undo,
+  redo, clear, pen pressure), "Add drawing" in the document actions, conversion to an equation.
+- Notifications screen (empty, like the Compose one) and its side-menu link.
+- Offline banner; editor box/card grouping moved to `editor/blocks/groups.ts` and shared with
+  the read-only document.
+
+**Decisions**
+
+- See "What was built" in `docs/plan/09-extras.md`.
+
+**Verified**
+
+- `eslint app test`, `prettier --check .`, `tsc --noEmit` (outside `e2e/`), `vitest run`
+  (563 passed) and `react-router build` pass.
+- In Chrome against `react-router dev` and a throwaway mock API: the site page, the graph (layout,
+  card, drag, pan), the drawing dialog and its saved preview, and the search with ⌘K. No console
+  errors. The drag check found that a dropped node left its neighbours in place; fixed.
+- Not verified: nothing against a real backend; equation conversion only in tests; touch and
+  pen input; Firefox and Safari.
+
+**Next**
+
+- M9: the Playwright suite (needs `@playwright/test` installed), accessibility and performance
+  passes, the `/site/*` fallback on the bucket, then the cut-over.
+- M8 items outside this plan: spreadsheet and equation editing, comments, presentations.
+
+---
+
 ## 2026-11-17 — M7 — Settings
 
 Implements `docs/plan/08-settings.md`. Import / export files (also listed under M7) are not part
