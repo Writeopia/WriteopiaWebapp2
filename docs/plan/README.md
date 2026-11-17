@@ -134,11 +134,11 @@ Legend: **M#** is the milestone the feature lands in.
 
 ### AI — [07](07-ai.md)
 
-- [ ] AI availability, usage and quota (M6)
-- [ ] AI command bar (free command, streamed, replace/add/rewrite) (M6)
-- [ ] Quick actions: summary, action points, FAQ, tags — on document or selected lines (M6)
-- [ ] Writing agent suggestions, folder and tag suggestions (M6)
-- [ ] AI image for a paragraph (M6)
+- [x] AI availability, usage and quota (M6)
+- [x] AI command bar (free command, streamed, replace/add/rewrite) (M6)
+- [x] Quick actions: summary, action points, FAQ, tags — on document or selected lines (M6)
+- [x] Writing agent suggestions, folder and tag suggestions (M6)
+- [x] AI image for a paragraph (M6)
 - [ ] Presentations: generate, list, view, full screen, delete (M8)
 
 ### Settings — [08](08-settings.md)
