@@ -62,9 +62,13 @@ export class StepSync {
   private status: SyncStatus = "saved";
   private stopped = false;
 
-  constructor(options: StepSyncOptions, loaded: readonly StoryStep[]) {
+  /** [loaded]: the blocks the editor opened with, which the server holds. */
+  constructor(options: StepSyncOptions, loaded: readonly Block[]) {
     this.options = { debounceMs: 500, maxFailures: 3, now: Date.now, ...options };
+    // What the editor holds until it says otherwise: a flush before any update sends nothing.
+    this.blocks = [...loaded];
     for (const step of loaded) {
+      if (step.ephemeral) continue;
       this.known.set(step.id, { position: step.position, key: keyOf(step, step.position) });
     }
     // The server refuses to delete a step changed after this time, so it starts at the

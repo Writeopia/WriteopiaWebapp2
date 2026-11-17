@@ -7,7 +7,7 @@ import { patchDocument } from "~/features/menu/cache";
 import { menuKeys } from "~/features/menu/queries";
 
 import { syncSteps } from "../api";
-import { documentContent, ordered, titleText } from "../state/reducer";
+import { ordered, titleText } from "../state/reducer";
 import type { EditorStore } from "../state/store";
 import { StepSync, type SyncStatus } from "./stepSync";
 
@@ -40,7 +40,7 @@ export function useDocumentSync(
             .dispatch({ type: "serverUpdate", steps, deletedIds, keepIds }, { history: false }),
         onStatus: setStatus,
       },
-      documentContent(store.getState().state),
+      ordered(store.getState().state),
     );
     syncRef.current = sync;
 

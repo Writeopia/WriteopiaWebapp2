@@ -35,3 +35,7 @@ jobs:
         run: pnpm test
       - name: Build
         run: pnpm build
+      - name: Install the browser for the journeys
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Journeys in the browser
+        run: pnpm test:e2e

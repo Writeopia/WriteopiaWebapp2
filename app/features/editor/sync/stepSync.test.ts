@@ -50,6 +50,14 @@ function setup(
 }
 
 describe("StepSync", () => {
+  it("deletes nothing when flushed before any update", async () => {
+    const { sync, requests } = setup();
+    await sync.flush();
+    await vi.runAllTimersAsync();
+    expect(requests).toEqual([]);
+    expect(sync.hasUnsaved()).toBe(false);
+  });
+
   it("sends nothing while nothing changed", async () => {
     const { sync, requests } = setup();
     sync.update([title, line]);

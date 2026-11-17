@@ -41,7 +41,7 @@ export default tseslint.config(
     rules: { "no-restricted-syntax": "off" },
   },
   {
-    files: ["*.config.{ts,js}"],
+    files: ["*.config.{ts,js}", "e2e/**"],
     languageOptions: { globals: { ...globals.node } },
   },
   {
