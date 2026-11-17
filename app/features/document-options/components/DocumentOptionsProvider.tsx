@@ -30,6 +30,7 @@ import {
   downloadFile,
   exportFileName,
 } from "../export";
+import { DocumentMetadata, FavoriteState } from "../metadata";
 import { DocumentOptionsDialogs } from "./DocumentOptionsDialogs";
 import { DocumentTitleFrame } from "./DocumentTitleFrame";
 
@@ -54,8 +55,7 @@ export function DocumentOptionsProvider({ document, children }: DocumentOptionsP
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const openMenuDialog = useMenuDialogs((state) => state.open);
-  const [current, setCurrent] = useState(document);
-  const [favorite, setFavorite] = useState<boolean | null>(null);
+  const [, setVersion] = useState(0);
   const [dialog, setDialog] = useState<OptionsDialog>(null);
 
   const isPremium = user.tier === "PREMIUM";
@@ -76,16 +76,8 @@ export function DocumentOptionsProvider({ document, children }: DocumentOptionsP
     staleTime: 5 * 60_000,
   });
 
-  // A locked document is read only until it is unlocked.
-  useEffect(() => {
-    store.getState().dispatch({ type: "setReadOnly", readOnly: current.isLocked });
-  }, [store, current.isLocked]);
-
-  const isFavorite = favorite ?? favorites.data?.includes(document.id) ?? document.isFavorite;
-
-  const options = useMemo<DocumentOptions>(() => {
-    const blocks = () => ordered(store.getState().state);
-    const title = () => textOf(blocks().find(isTitle) ?? { text: current.title });
+  const [savers] = useState(() => {
+    const rerender = () => setVersion((version) => version + 1);
     const refreshMenu = () =>
       void queryClient.invalidateQueries({ queryKey: menuKeys.all(workspace.id) });
     const failed = (error: unknown) =>
@@ -93,27 +85,49 @@ export function DocumentOptionsProvider({ document, children }: DocumentOptionsP
         t(error instanceof ApiError && error.isForbidden ? "premiumFeatureMessage" : "saveFailed"),
         { kind: "error" },
       );
+    const title = () =>
+      textOf(ordered(store.getState().state).find(isTitle) ?? { text: document.title });
 
-    const change = (changes: DocumentChanges) => {
-      const before = current;
-      const next = { ...current, ...changes };
-      setCurrent(next);
-      menuApi
-        .saveDocuments(workspace.id, [
-          { ...next, title: title(), content: [], lastUpdatedAt: Date.now() },
-        ])
-        .then(refreshMenu)
-        .catch((error: unknown) => {
-          // Only what this change touched goes back; a later change keeps its fields.
-          setCurrent((now) => ({
-            ...now,
-            ...Object.fromEntries(
-              Object.keys(changes).map((key) => [key, before[key as keyof DocumentChanges]]),
-            ),
-          }));
-          failed(error);
-        });
+    const favorite = new FavoriteState({
+      send: (value) => menuApi.favoriteDocument(workspace.id, document.id, value),
+      onChange: rerender,
+      onError: failed,
+      onSaved: refreshMenu,
+    });
+
+    return {
+      favorite,
+      metadata: new DocumentMetadata(document, {
+        send: (fields) =>
+          menuApi.saveDocuments(workspace.id, [
+            {
+              ...fields,
+              isFavorite: favorite.current(fields.isFavorite),
+              title: title(),
+              content: [],
+              lastUpdatedAt: Date.now(),
+            },
+          ]),
+        onChange: rerender,
+        onError: failed,
+        onSaved: refreshMenu,
+      }),
     };
+  });
+  const current = savers.metadata.current;
+
+  // A locked document is read only until it is unlocked.
+  useEffect(() => {
+    store.getState().dispatch({ type: "setReadOnly", readOnly: current.isLocked });
+  }, [store, current.isLocked]);
+
+  const known = favorites.data?.includes(document.id) ?? document.isFavorite;
+  const isFavorite = savers.favorite.current(known);
+
+  const options = useMemo<DocumentOptions>(() => {
+    const blocks = () => ordered(store.getState().state);
+    const title = () => textOf(blocks().find(isTitle) ?? { text: current.title });
+    const change = (changes: DocumentChanges) => savers.metadata.change(changes);
 
     return {
       document: { ...current, isFavorite },
@@ -122,22 +136,13 @@ export function DocumentOptionsProvider({ document, children }: DocumentOptionsP
       isPremium,
       change,
       setIcon: (icon: Icon | null) => change({ icon }),
-      toggleFavorite: () => {
-        const next = !isFavorite;
-        setFavorite(next);
-        menuApi
-          .favoriteDocument(workspace.id, document.id, next)
-          .then(refreshMenu)
-          .catch((error: unknown) => {
-            setFavorite(!next);
-            failed(error);
-          });
-      },
+      toggleFavorite: () => savers.favorite.toggle(known),
+      serverChanged: (fields) => savers.metadata.serverChanged(fields),
       move: () =>
         openMenuDialog({
           type: "move",
           entries: [{ kind: "document", id: current.id, document: { ...current, title: title() } }],
-          onMoved: (parentId) => setCurrent((now) => ({ ...now, parentId })),
+          onMoved: (parentId) => savers.metadata.serverChanged({ parentId }),
         }),
       open: setDialog,
       exportMarkdown: () =>
@@ -156,14 +161,13 @@ export function DocumentOptionsProvider({ document, children }: DocumentOptionsP
     };
   }, [
     store,
+    savers,
     current,
     isFavorite,
+    known,
     catalogue.data,
     isPremium,
     ai.data,
-    workspace.id,
-    document.id,
-    queryClient,
     openMenuDialog,
   ]);
 

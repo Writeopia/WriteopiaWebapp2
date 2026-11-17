@@ -555,6 +555,17 @@ describe("read-only", () => {
     expect(run(state, { type: "input", id: "s1", text: "ab", cursor: 2 })).toBe(state);
     expect(run(state, { type: "selectAll" })).toBe(state);
   });
+
+  it("still shows what changed elsewhere, so the sync never takes it for deleted", () => {
+    const locked = run(editor({ text: "a" }), { type: "setReadOnly", readOnly: true });
+    const state = run(locked, {
+      type: "serverUpdate",
+      steps: [aStep({ id: "new", text: "N", position: rankAt(9) })],
+      deletedIds: [],
+      keepIds: new Set(),
+    });
+    expect(texts(state)).toEqual(["Title", "a", "N"]);
+  });
 });
 
 describe("documentContent", () => {

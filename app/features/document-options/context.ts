@@ -21,6 +21,8 @@ export type DocumentOptions = {
   change: (changes: DocumentChanges) => void;
   setIcon: (icon: Icon | null) => void;
   toggleFavorite: () => void;
+  /** Fields another endpoint changed on the server, which the next save must not undo. */
+  serverChanged: (fields: Partial<Document>) => void;
   /** Moves the document; the dialog is the menu's. */
   move: () => void;
   open: (dialog: OptionsDialog) => void;

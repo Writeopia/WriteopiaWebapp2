@@ -376,8 +376,11 @@ export function useMenuMutations() {
     failure: "moveFailed",
   });
 
-  /** Moves entries to a folder and offers to take the move back. */
-  const move = (entries: MenuEntry[], target: MoveTarget) => {
+  /**
+   * Moves entries to a folder and offers to take the move back. [onMoved] is told the folder
+   * the entries are in once the backend moved them, and again after an undo.
+   */
+  const move = (entries: MenuEntry[], target: MoveTarget, onMoved?: (folderId: string) => void) => {
     const moving = entries.filter(
       (entry) => entry.id !== target.id && entryParentId(entry) !== target.id,
     );
@@ -387,6 +390,7 @@ export function useMenuMutations() {
       { entries: moving, targetId: target.id },
       {
         onSuccess: () => {
+          onMoved?.(target.id);
           const message =
             moving.length === 1
               ? t("movedItemToFolder", { item: displayTitle(moving[0]!), folder: target.title })
@@ -394,7 +398,7 @@ export function useMenuMutations() {
 
           showToast(message, {
             duration: UNDO_TOAST_MS,
-            action: { label: t("undo"), onClick: () => undoMove(moving, target.id) },
+            action: { label: t("undo"), onClick: () => undoMove(moving, target.id, onMoved) },
           });
         },
       },
@@ -402,7 +406,7 @@ export function useMenuMutations() {
   };
 
   /** Sends each entry back to the folder it came from. */
-  const undoMove = (moved: MenuEntry[], fromId: string) => {
+  const undoMove = (moved: MenuEntry[], fromId: string, onMoved?: (folderId: string) => void) => {
     const byOrigin = new Map<string, MenuEntry[]>();
     for (const entry of moved) {
       const origin = entryParentId(entry) ?? ROOT_FOLDER_ID;
@@ -413,7 +417,9 @@ export function useMenuMutations() {
       byOrigin.set(origin, [...(byOrigin.get(origin) ?? []), now]);
     }
 
-    for (const [origin, entries] of byOrigin) moveMutation.mutate({ entries, targetId: origin });
+    for (const [origin, entries] of byOrigin) {
+      moveMutation.mutate({ entries, targetId: origin }, { onSuccess: () => onMoved?.(origin) });
+    }
   };
 
   return {

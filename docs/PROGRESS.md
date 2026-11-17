@@ -47,7 +47,12 @@ Implements `docs/plan/06-document-options.md`, except comments (M8).
 **Verified**
 
 - `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test` (373 passed), `pnpm build`
-  and `pnpm test:e2e` (18 passed) pass locally.
+  and `pnpm test:e2e` (18 passed) pass locally, after the review fixes (387 tests).
+- A fresh review found one critical and three important defects, all fixed with tests that
+  failed first. Critical: a lock, icon or tag change re-published or un-moved a document,
+  because `POST /document` overwrites the whole row. Important: overlapping saves, a move
+  recorded before it succeeded (and not undone by Undo), and remote changes dropped while
+  locked. Seven minors are deferred (see Next).
 - The component tests were written after the components, not before them. Each one was
   checked by breaking the code it covers (header exclusivity, the rollback of a refused
   change, keeping a used picture, the title of a metadata save) and watching it fail.
@@ -58,6 +63,11 @@ Implements `docs/plan/06-document-options.md`, except comments (M8).
 **Next**
 
 - Run the document options against a backend, the CDN's CORS headers in particular.
+- Deferred review minors: a failed "keep in library" after closing the dialog is silent; a
+  delete with unsent edits can show the "not saved" toast; the crop is read at 768 px with
+  fractional luma; downloads revoke their URL after 0 ms (Safari); clicking the header band
+  itself does not open the editor; the side menu shows old icons and tags until it refetches;
+  cancelling the new-tag dialog during its save still attaches the tag.
 - M6 — `docs/plan/07-ai.md`.
 
 ---

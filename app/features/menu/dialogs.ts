@@ -13,7 +13,7 @@ export type MenuDialog =
   | { type: "editFolder"; folder: Folder }
   | { type: "icon"; document: Document }
   | { type: "delete"; entries: MenuEntry[] }
-  /** [onMoved] is told the folder the entries went to. */
+  /** [onMoved] is told the folder the entries are in, once moved and after an undo. */
   | { type: "move"; entries: MenuEntry[]; onMoved?: (folderId: string) => void };
 
 type MenuDialogState = {

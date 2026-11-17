@@ -157,6 +157,13 @@ Differences from the plan above:
   `DocumentOptionsProvider`. They are saved with `POST /document` without steps, **with the
   title of the title step**. That endpoint also writes the title, so the title the document
   was opened with would undo a rename.
+- `POST /document` overwrites every column of the document (published, folder, deleted,
+  favorite...), not only the fields that changed. So `DocumentMetadata` builds each request from
+  what the server holds, updated by the endpoints that change it (publish, move, delete), plus
+  the changes made here. Requests go one at a time; changes made meanwhile leave together. A
+  refused request drops only its own changes. Favorite toggles are serialised the same way.
+- Server updates from step sync reach the editor while the document is locked. Otherwise step
+  sync would count those steps as known and delete them on the server after an unlock.
 - The editor draws the title through a `TitleFrameContext` slot, so `editor/` does not know
   about the header, the icon or the tags.
 - The header picture is read a second time with CORS to find the drawing's rows. When the CDN

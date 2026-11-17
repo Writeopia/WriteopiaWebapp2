@@ -190,8 +190,7 @@ function MoveDialog({ entries, onMoved, onClose }: MoveDialogProps) {
   const alreadyHere = entries.every((entry) => entryParentId(entry) === currentId);
 
   const confirm = () => {
-    move(entries, { id: currentId, title: current?.title ?? t("home") });
-    onMoved?.(currentId);
+    move(entries, { id: currentId, title: current?.title ?? t("home") }, onMoved);
     onClose();
   };
 

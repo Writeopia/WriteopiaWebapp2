@@ -125,6 +125,10 @@ export function reducer(state: EditorState, action: Action): EditorState {
       return slashHighlight(state, action.offset, action.count);
     case "slashClose":
       return state.slash ? { ...state, slash: null } : state;
+    // What changed elsewhere shows on a locked document too: the sync counts it as known, and
+    // would delete it on the server if the editor never held it.
+    case "serverUpdate":
+      return serverUpdate(state, action.steps, action.deletedIds, action.keepIds);
   }
 
   if (state.readOnly) return state;
@@ -182,8 +186,6 @@ export function reducer(state: EditorState, action: Action): EditorState {
       return removeIds(state, [...state.selectedIds]);
     case "clickAtEnd":
       return clickAtEnd(state);
-    case "serverUpdate":
-      return serverUpdate(state, action.steps, action.deletedIds, action.keepIds);
     case "slashPick":
       return slashPick(state, action.command, action.now);
   }

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ApiError } from "~/core/api";
 import { t } from "~/core/i18n";
@@ -91,7 +91,7 @@ function PublishDialog({
 }) {
   const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
-  const { document, isPremium } = useDocumentOptions();
+  const { document, isPremium, serverChanged } = useDocumentOptions();
   const key = ["published", workspace.id, document.id];
   const premiumRequired = (error: unknown) => error instanceof ApiError && error.isForbidden;
 
@@ -102,6 +102,11 @@ function PublishDialog({
     staleTime: 0,
     retry: (count, error) => !premiumRequired(error) && count < 2,
   });
+
+  // The next save of the document's own fields sends the publish state, so it must be this one.
+  useEffect(() => {
+    if (published.data !== undefined) serverChanged({ published: published.data });
+  }, [published.data, serverChanged]);
 
   const toggle = useMutation({
     mutationFn: (publish: boolean) => setPublished(workspace.id, document.id, publish),
@@ -204,12 +209,13 @@ function DeleteDocumentDialog({
 }) {
   const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
-  const { document } = useDocumentOptions();
+  const { document, serverChanged } = useDocumentOptions();
   const title = useEditor((store) => store.state.blocks[store.state.order[0] ?? ""]?.text ?? "");
 
   const removal = useMutation({
     mutationFn: () => deleteDocuments(workspace.id, [document.id]),
     onSuccess: () => {
+      serverChanged({ deleted: true });
       void queryClient.invalidateQueries({ queryKey: menuKeys.all(workspace.id) });
       onClose();
       onDeleted();

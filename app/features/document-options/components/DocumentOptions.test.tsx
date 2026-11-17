@@ -9,7 +9,14 @@ import { type DocumentTag, ROOT_FOLDER_ID, type StoryStep, StoryTypes } from "~/
 import { rankAt } from "~/core/rank/rank";
 import DocumentRoute from "~/routes/app/document";
 
-import { aDocument, aStep, aUser, aWorkspace, WORKSPACE_ID } from "../../../../test/fixtures";
+import {
+  aDocument,
+  aFolder,
+  aStep,
+  aUser,
+  aWorkspace,
+  WORKSPACE_ID,
+} from "../../../../test/fixtures";
 import { apiUrl } from "../../../../test/msw/handlers";
 import { menuBackend } from "../../../../test/msw/menuBackend";
 import { server } from "../../../../test/msw/server";
@@ -329,6 +336,63 @@ describe("the document actions", () => {
     await waitFor(() => expect(lastSavedDocument(menu)).toMatchObject({ title: "Trip to Porto" }));
   });
 
+  it("sends the publish state as it is now, not as the document opened", async () => {
+    const menu = backend();
+    menu.published.value = true;
+    server.use(
+      http.get(apiUrl("/docs/workspace/:ws/document/:id"), () =>
+        HttpResponse.json({ ...trip, published: true }),
+      ),
+    );
+    renderTrip();
+    await openAction("Publish to web");
+    const dialog = await screen.findByRole("dialog", { name: "Publish to web" });
+    await userEvent.click(await within(dialog).findByRole("button", { name: "Unpublish" }));
+    await within(dialog).findByRole("button", { name: "Publish" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+
+    await openAction("Lock document");
+
+    await waitFor(() => expect(lastSavedDocument(menu)).toMatchObject({ isLocked: true }));
+    expect(lastSavedDocument(menu)?.published).toBe(false);
+  });
+
+  it("sends one change at a time and keeps a later change when an earlier one fails", async () => {
+    backend();
+    const bodies: { isLocked: boolean; tagIds: string[] }[] = [];
+    let release: () => void = () => undefined;
+    let first = true;
+    server.use(
+      http.post(apiUrl("/docs/workspace/document"), async ({ request }) => {
+        const body = (await request.json()) as {
+          documents: { isLocked: boolean; tagIds: string[] }[];
+        };
+        bodies.push(body.documents[0]!);
+        if (first) {
+          first = false;
+          await new Promise<void>((resolve) => (release = resolve));
+          return new HttpResponse(null, { status: 500 });
+        }
+        return new HttpResponse(null, { status: 200 });
+      }),
+    );
+    renderTrip();
+    await openAction("Tags");
+    const dialog = await screen.findByRole("dialog", { name: "Tags" });
+    await userEvent.click(await within(dialog).findByRole("checkbox", { name: /Travel/ }));
+    await userEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    await openAction("Lock document");
+
+    // The lock waits for the tags to be answered.
+    expect(bodies).toHaveLength(1);
+    release();
+
+    await waitFor(() => expect(bodies).toHaveLength(2));
+    expect(bodies[1]).toMatchObject({ isLocked: true, tagIds: [] });
+    expect(await screen.findByText("Locked")).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Tags" })).toBeNull();
+  });
+
   it("takes the lock back when the backend refuses it", async () => {
     backend();
     server.use(
@@ -363,6 +427,55 @@ describe("the document actions", () => {
 
     await waitFor(() =>
       expect(lastSavedDocument(menu)?.icon).toEqual({ label: first.title, tint: null }),
+    );
+  });
+
+  it("moves the document, and its folder follows an undo of the move", async () => {
+    const menu = backend();
+    menu.state.folders.push(aFolder({ id: "work", title: "Work", parentId: ROOT_FOLDER_ID }));
+    renderTrip();
+    await openAction("Move to...");
+    const dialog = await screen.findByRole("dialog", { name: "Move to..." });
+    await userEvent.click(await within(dialog).findByRole("button", { name: /Work/ }));
+    await userEvent.click(within(dialog).getByRole("button", { name: "Move here" }));
+    await waitFor(() =>
+      expect(menu.state.documents.find((each) => each.id === "trip")?.parentId).toBe("work"),
+    );
+
+    await openAction("Lock document");
+    await waitFor(() => expect(lastSavedDocument(menu)).toMatchObject({ parentId: "work" }));
+
+    await userEvent.click(await screen.findByRole("button", { name: "Undo" }));
+    await waitFor(() =>
+      expect(menu.state.documents.find((each) => each.id === "trip")?.parentId).toBe(
+        ROOT_FOLDER_ID,
+      ),
+    );
+    await openAction("Unlock document");
+    await waitFor(() =>
+      expect(lastSavedDocument(menu)).toMatchObject({ isLocked: false, parentId: ROOT_FOLDER_ID }),
+    );
+  });
+
+  it("keeps the folder when the move fails", async () => {
+    const menu = backend();
+    menu.state.folders.push(aFolder({ id: "work", title: "Work", parentId: ROOT_FOLDER_ID }));
+    server.use(
+      http.post(
+        apiUrl("/docs/workspace/:ws/document/:id/move"),
+        () => new HttpResponse(null, { status: 500 }),
+      ),
+    );
+    renderTrip();
+    await openAction("Move to...");
+    const dialog = await screen.findByRole("dialog", { name: "Move to..." });
+    await userEvent.click(await within(dialog).findByRole("button", { name: /Work/ }));
+    await userEvent.click(within(dialog).getByRole("button", { name: "Move here" }));
+    expect(await screen.findByText("The items could not be moved.")).toBeInTheDocument();
+
+    await openAction("Lock document");
+    await waitFor(() =>
+      expect(lastSavedDocument(menu)).toMatchObject({ isLocked: true, parentId: ROOT_FOLDER_ID }),
     );
   });
 
