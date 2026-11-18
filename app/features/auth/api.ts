@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { api, ApiError } from "~/core/api";
+import { api, ApiError, renewSession } from "~/core/api";
 import { type User, userSchema } from "~/core/models";
 
 /**
@@ -69,13 +69,23 @@ export function logout(): Promise<void> {
 }
 
 /** The signed-in user; null when there is no session. An expired session is renewed first. */
-export async function getSessionUser(): Promise<User | null> {
-  try {
-    return await api.get("/auth/user/current", userSchema);
-  } catch (error) {
-    if (error instanceof ApiError && (error.isUnauthorized || error.isForbidden)) return null;
-    throw error;
-  }
+export function getSessionUser(): Promise<User | null> {
+  return api.get("/auth/user/current", userSchema).catch(nullWithoutSession);
+}
+
+/**
+ * The same question from a screen that is already open for a guest: finding no session is
+ * the expected answer there, so nobody is told that a session expired.
+ */
+export async function findSessionUser(): Promise<User | null> {
+  const ask = () => api.get("/auth/user/current", userSchema, noRenewal).catch(nullWithoutSession);
+
+  return (await ask()) ?? ((await renewSession()) ? ask() : null);
+}
+
+function nullWithoutSession(error: unknown): null {
+  if (error instanceof ApiError && (error.isUnauthorized || error.isForbidden)) return null;
+  throw error;
 }
 
 /**

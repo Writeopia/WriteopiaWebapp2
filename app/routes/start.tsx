@@ -1,11 +1,14 @@
 import { redirect } from "react-router";
 
 import { queryClient } from "~/core/query/queryClient";
-import { decideStart, loadSessionUser } from "~/features/auth/session";
+import { decideStart, hasSessionHint, loadSessionUser, paths } from "~/features/auth/session";
 import { getSelectedWorkspaceId, workspacesQuery } from "~/features/workspaces/api";
 
 /** The entry of the app: it only decides where to go. */
 export async function clientLoader() {
+  // A browser that was not signed in gets the login without waiting for the backend.
+  if (!hasSessionHint()) return redirect(paths.login);
+
   const user = await loadSessionUser();
   const workspaces = user ? await queryClient.fetchQuery(workspacesQuery) : [];
 

@@ -1,15 +1,19 @@
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
-import { NetworkError } from "~/core/api";
+import { NetworkError, onSessionExpired } from "~/core/api";
+import { queryClient } from "~/core/query/queryClient";
 import { selectWorkspace } from "~/features/workspaces/api";
 
 import { aUser, aWorkspace } from "../../../test/fixtures";
 import { apiUrl, signedIn } from "../../../test/msw/handlers";
 import { server } from "../../../test/msw/server";
 import {
+  clearSession,
   decideStart,
+  findSessionQuietly,
   guestOnly,
+  hasSessionHint,
   loadSessionUser,
   paths,
   requireSession,
@@ -25,6 +29,25 @@ async function redirectOf(guard: () => Promise<unknown>): Promise<string | null>
     if (thrown instanceof Response) return thrown.headers.get("Location");
     throw thrown;
   }
+}
+
+/** Counts the times the backend is asked who is signed in, answering that nobody is. */
+function countSessionRequests() {
+  const counter = { requests: 0 };
+  server.use(
+    http.get(apiUrl("/auth/user/current"), () => {
+      counter.requests++;
+      return new HttpResponse("Unauthorized", { status: 401 });
+    }),
+  );
+  return counter;
+}
+
+/** A browser that was signed in the last time it was here. */
+async function withSessionHint() {
+  server.use(...signedIn(aUser()));
+  await loadSessionUser();
+  queryClient.clear();
 }
 
 function withWorkspaces(...workspaces: object[]) {
@@ -78,6 +101,64 @@ describe("loadSessionUser", () => {
   });
 });
 
+describe("session hint", () => {
+  it("is not there in a browser that never signed in", async () => {
+    await loadSessionUser();
+
+    expect(hasSessionHint()).toBe(false);
+  });
+
+  it("is there once the backend answered with a user", async () => {
+    server.use(...signedIn(aUser()));
+
+    await loadSessionUser();
+
+    expect(hasSessionHint()).toBe(true);
+  });
+
+  it("is gone when the session ends", async () => {
+    await withSessionHint();
+
+    clearSession();
+
+    expect(hasSessionHint()).toBe(false);
+  });
+});
+
+describe("findSessionQuietly", () => {
+  it("answers null for a guest without announcing an expired session", async () => {
+    let expired = 0;
+    const remove = onSessionExpired(() => expired++);
+
+    expect(await findSessionQuietly()).toBeNull();
+    expect(expired).toBe(0);
+    remove();
+  });
+
+  it("answers the user and remembers the session", async () => {
+    server.use(...signedIn(aUser()));
+
+    expect(await findSessionQuietly()).toEqual(aUser());
+    expect(hasSessionHint()).toBe(true);
+    expect(await loadSessionUser()).toEqual(aUser());
+  });
+
+  it("renews a session whose access expired", async () => {
+    let renewed = false;
+    server.use(
+      http.get(apiUrl("/auth/user/current"), () =>
+        renewed ? HttpResponse.json(aUser()) : new HttpResponse("Unauthorized", { status: 401 }),
+      ),
+      http.post(apiUrl("/auth/refresh/web"), () => {
+        renewed = true;
+        return new HttpResponse("Token refreshed");
+      }),
+    );
+
+    expect(await findSessionQuietly()).toEqual(aUser());
+  });
+});
+
 describe("guards", () => {
   it("requireSession sends a guest to the login", async () => {
     expect(await redirectOf(requireSession)).toBe(paths.login);
@@ -115,17 +196,28 @@ describe("guards", () => {
     });
   });
 
-  it("guestOnly lets a guest in and sends a signed-in user to the start", async () => {
+  it("guestOnly lets a guest in without asking the backend", async () => {
+    const counter = countSessionRequests();
+
+    expect(await redirectOf(guestOnly)).toBeNull();
+    expect(counter.requests).toBe(0);
+  });
+
+  it("guestOnly lets in a guest whose session is gone", async () => {
+    await withSessionHint();
+    server.resetHandlers();
+
     expect(await redirectOf(guestOnly)).toBeNull();
   });
 
   it("guestOnly sends a signed-in user to the start", async () => {
-    server.use(...signedIn(aUser()));
+    await withSessionHint();
 
     expect(await redirectOf(guestOnly)).toBe(paths.start);
   });
 
   it("guestOnly still opens the screen when the backend is unreachable", async () => {
+    await withSessionHint();
     server.use(http.get(apiUrl("/auth/user/current"), () => HttpResponse.error()));
 
     expect(await redirectOf(guestOnly)).toBeNull();

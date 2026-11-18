@@ -2,13 +2,14 @@ import { redirect } from "react-router";
 
 import type { User, Workspace } from "~/core/models";
 import { queryClient } from "~/core/query/queryClient";
+import { readPreference, removePreference, writePreference } from "~/core/storage";
 import {
   clearSelectedWorkspace,
   getSelectedWorkspaceId,
   workspacesQuery,
 } from "~/features/workspaces/api";
 
-import { getSessionUser } from "./api";
+import { findSessionUser, getSessionUser } from "./api";
 
 /**
  * Who is signed in, and the guards the routes put in their loaders. The session itself is in
@@ -19,24 +20,50 @@ export const sessionUserKey = ["session", "user"] as const;
 
 const USER_STALE_MS = 5 * 60_000;
 
+/**
+ * The page cannot read the session cookies, so the browser keeps a note that it was signed in
+ * the last time. Without the note the login opens right away, without waiting for the backend.
+ */
+const SESSION_HINT_KEY = "writeopia.signedIn";
+
+/** Whether this browser was signed in the last time it was here. Not a proof of a session. */
+export function hasSessionHint(): boolean {
+  return readPreference(SESSION_HINT_KEY) !== null;
+}
+
 /** The signed-in user, or null. Throws when the backend cannot be reached. */
-export function loadSessionUser(): Promise<User | null> {
-  return queryClient.fetchQuery({
+export async function loadSessionUser(): Promise<User | null> {
+  const user = await queryClient.fetchQuery({
     queryKey: sessionUserKey,
     queryFn: getSessionUser,
     staleTime: USER_STALE_MS,
   });
+
+  if (user) writePreference(SESSION_HINT_KEY, "1");
+  return user;
+}
+
+/**
+ * Asks who is signed in from a screen that opened without asking: a browser with no hint may
+ * still have a session (storage was cleared, or it signed in before the hint existed).
+ */
+export async function findSessionQuietly(): Promise<User | null> {
+  const user = await findSessionUser();
+  if (user) setSessionUser(user);
+  return user;
 }
 
 /** Records the user of a session that just started. */
 export function setSessionUser(user: User): void {
   queryClient.setQueryData(sessionUserKey, user);
+  writePreference(SESSION_HINT_KEY, "1");
 }
 
 /** Forgets everything about the session that ended: the user, the cache, the workspace. */
 export function clearSession(): void {
   queryClient.clear();
   clearSelectedWorkspace();
+  removePreference(SESSION_HINT_KEY);
 }
 
 export const paths = {
@@ -93,6 +120,9 @@ export async function requireWorkspace(): Promise<{ user: User; workspace: Works
 
 /** For the sign-in and sign-up routes: someone already signed in goes to the app. */
 export async function guestOnly(): Promise<null> {
+  // The screen opens at once for a browser that was not signed in; its layout asks afterwards.
+  if (!hasSessionHint()) return null;
+
   // When the backend cannot be reached the screen still opens; its own request will say so.
   const user = await loadSessionUser().catch(() => null);
 
