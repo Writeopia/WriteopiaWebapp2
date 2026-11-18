@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 
 import { t } from "~/core/i18n";
 import { Button, showToast } from "~/core/ui";
@@ -34,15 +34,7 @@ export default function ResetPassword() {
   };
 
   return (
-    <AuthCard
-      title={t("resetPassword")}
-      subtitle={t("typeNewPassword")}
-      footer={
-        <Link to={paths.start} className="text-link underline">
-          {t("back")}
-        </Link>
-      }
-    >
+    <AuthCard title={t("resetPassword")} subtitle={t("typeNewPassword")} backTo={paths.start}>
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
         <NewPasswordFields
           password={password}

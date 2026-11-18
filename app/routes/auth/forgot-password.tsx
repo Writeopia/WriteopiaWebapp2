@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 
 import { t } from "~/core/i18n";
 import { Button, TextField } from "~/core/ui";
@@ -29,15 +29,7 @@ export default function ForgotPasswordEmail() {
   };
 
   return (
-    <AuthCard
-      title={t("forgotPasswordTitle")}
-      subtitle={t("enterYourEmail")}
-      footer={
-        <Link to={paths.login} className="text-link underline">
-          {t("back")}
-        </Link>
-      }
-    >
+    <AuthCard title={t("forgotPasswordTitle")} subtitle={t("enterYourEmail")} backTo={paths.login}>
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
         <TextField
           label={t("email")}
