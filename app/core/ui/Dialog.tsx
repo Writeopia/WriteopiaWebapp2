@@ -10,6 +10,8 @@ type DialogProps = {
   children: ReactNode;
   /** Buttons, drawn at the bottom right. */
   actions?: ReactNode;
+  /** "lg" for a dialog with its own navigation, like the settings. */
+  size?: "md" | "lg";
   className?: string;
 };
 
@@ -17,7 +19,15 @@ type DialogProps = {
  * A modal dialog over the native <dialog>, which gives the focus trap, the Escape key and the
  * inert page behind for free.
  */
-export function Dialog({ open, onClose, title, children, actions, className }: DialogProps) {
+export function Dialog({
+  open,
+  onClose,
+  title,
+  children,
+  actions,
+  size = "md",
+  className,
+}: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -44,7 +54,8 @@ export function Dialog({ open, onClose, title, children, actions, className }: D
         if (event.target === ref.current) onClose();
       }}
       className={cn(
-        "m-auto w-[min(32rem,calc(100vw-2rem))] border-card-border bg-card-bg text-on-bg",
+        "m-auto border-card-border bg-card-bg text-on-bg",
+        size === "md" ? "w-[min(32rem,calc(100vw-2rem))]" : "w-[min(56rem,calc(100vw-2rem))]",
         "rounded-lg border p-0 shadow-xl backdrop:bg-black/40",
         className,
       )}

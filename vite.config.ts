@@ -2,11 +2,14 @@ import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, loadEnv } from "vite";
 
+import { buildInfoDefines } from "./buildInfo";
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "WRITEOPIA_");
 
   return {
     plugins: [tailwindcss(), reactRouter()],
+    define: buildInfoDefines(),
     resolve: {
       alias: { "~": new URL("./app", import.meta.url).pathname },
     },

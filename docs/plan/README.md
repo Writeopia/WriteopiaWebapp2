@@ -143,19 +143,19 @@ Legend: **M#** is the milestone the feature lands in.
 
 ### Settings — [08](08-settings.md)
 
-- [ ] Account: name and tier, change workspace, reset password, logout, export workspace, delete account (M7)
-- [ ] Appearance: color theme (light/dark/system), accent color (M2 for the theme itself, M7 for the screen)
-- [ ] AI: provider, cloud usage (M7)
-- [ ] Workspace: header images library, tags catalogue (M7)
-- [ ] Teams: workspaces list, members, search and add user, change role (M7)
-- [ ] App version (M7)
+- [x] Account: name and tier, change workspace, reset password, logout, export workspace, delete account (M7)
+- [x] Appearance: color theme (light/dark/system), accent color (M2 for the theme itself, M7 for the screen)
+- [x] AI: provider, cloud usage (M7)
+- [x] Workspace: header images library, tags catalogue (M7)
+- [x] Teams: workspaces list, members, search and add user, change role (M7)
+- [x] App version (M7)
 
 ### Extras — [09](09-extras.md)
 
-- [ ] Search dialog (documents and presentations) (M4)
-- [ ] Public site view `/site/:documentId` (M5)
-- [ ] Documents graph (M8)
-- [ ] Notifications screen (M8)
+- [x] Search dialog (documents and presentations) (M4)
+- [x] Public site view `/site/:documentId` (M5)
+- [x] Documents graph (M8)
+- [x] Notifications screen (M8)
 
 ## Milestones
 

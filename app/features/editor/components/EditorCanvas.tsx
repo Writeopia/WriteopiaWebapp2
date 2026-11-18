@@ -18,6 +18,7 @@ import { useDragBox } from "~/features/menu/useDragBox";
 
 import { BlockContent } from "../blocks/BlockContent";
 import { textElement } from "../blocks/EditableText";
+import { groupClasses, groupParts } from "../blocks/groups";
 import { getCaret, setCaret } from "../dom/caret";
 import { readClipboard, textToBlocks, writeBlocks } from "../dom/clipboard";
 import { isMacPlatform, keyCommand } from "../dom/keymap";
@@ -34,52 +35,6 @@ import { SlashMenu } from "./SlashMenu";
 const BLOCKS_MIME = "application/x-writeopia-blocks";
 
 type DropTarget = { id: string; after: boolean };
-
-type GroupKind = "box" | "card";
-
-/**
- * Box and card decorations draw one container around the consecutive blocks that have them.
- * Each row draws its own part (top, middle, bottom), so a block leaving or joining a group is
- * never drawn again from scratch and keeps the caret.
- */
-type GroupPart = { kind: GroupKind; first: boolean; last: boolean } | null;
-
-function kindOf(block: Block): GroupKind | null {
-  if (hasTag(block, Tags.HIGH_LIGHT_BLOCK)) return "box";
-  if (hasTag(block, Tags.CARD_BLOCK)) return "card";
-  return null;
-}
-
-function groupParts(blocks: Block[]): GroupPart[] {
-  return blocks.map((block, index) => {
-    const kind = kindOf(block);
-    if (!kind) return null;
-    const before = blocks[index - 1];
-    const after = blocks[index + 1];
-    return {
-      kind,
-      first: !before || kindOf(before) !== kind,
-      last: !after || kindOf(after) !== kind,
-    };
-  });
-}
-
-function groupClasses(part: GroupPart): string | false {
-  if (!part) return false;
-  const shape = cn(
-    "mx-0 px-3",
-    part.first && "mt-1 rounded-t-lg pt-2",
-    part.last && "mb-1 rounded-b-lg pb-2",
-  );
-  return part.kind === "box"
-    ? cn(shape, "bg-highlight/60")
-    : cn(
-        shape,
-        "border-x border-card-border bg-card-bg",
-        part.first && "border-t",
-        part.last && "border-b",
-      );
-}
 
 /**
  * The page of the editor: the blocks in order, the handles to move them, the selection of

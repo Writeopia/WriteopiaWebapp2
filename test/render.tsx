@@ -16,6 +16,8 @@ type RenderRouteOptions = {
   path: string;
   /** The pattern of its route, when the path has parameters: "/app/folder/:folderId". */
   route?: string;
+  /** The query string of the first address: "?settings=teams". */
+  search?: string;
   /** What the router hands the screen as location.state. */
   state?: unknown;
   /** The paths the screen may navigate to; each one draws "at <path>". */
@@ -37,7 +39,7 @@ function Destination() {
 /** Draws a screen inside a router and the providers the app gives it. */
 export function renderRoute(
   Component: ComponentType,
-  { path, route = path, state, destinations = [] }: RenderRouteOptions,
+  { path, route = path, search, state, destinations = [] }: RenderRouteOptions,
 ) {
   const Stub = createRoutesStub([
     { path: route, Component },
@@ -46,7 +48,7 @@ export function renderRoute(
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <Stub initialEntries={[{ pathname: path, state }]} />
+      <Stub initialEntries={[{ pathname: path, search, state }]} />
       <Toaster />
     </QueryClientProvider>,
   );
