@@ -3,6 +3,7 @@ import {
   type ClipboardEvent,
   type DragEvent,
   type KeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
   useEffect,
   useLayoutEffect,
@@ -47,6 +48,7 @@ export function EditorCanvas() {
   const state = useEditor((s) => s.state);
   const search = useEditor((s) => s.search);
   const [drop, setDrop] = useState<DropTarget | null>(null);
+  const [lineDrag, setLineDrag] = useState(false);
 
   // The lines an AI answer replaces are hidden until the answer is kept or discarded.
   const blocks = useMemo(() => ordered(state).filter((block) => !block.hidden), [state]);
@@ -98,7 +100,60 @@ export function EditorCanvas() {
   const dragBox = useDragBox(select, () => undefined, {
     selector: "[data-block-id]",
     id: (element) => element.dataset.blockId ?? "",
+    surface: "[data-drag-surface]",
   });
+
+  /**
+   * A press on a line that is dragged out of it selects whole lines: the browser keeps a
+   * selection of text inside the line it started in, so it never reaches the next one.
+   */
+  const onLinePointerDown = (event: ReactPointerEvent<HTMLElement>) => {
+    if (event.button !== 0 || event.pointerType === "touch") return;
+
+    const pressed = event.target as HTMLElement;
+    const origin = pressed.closest<HTMLElement>("[data-block-id]");
+    if (!origin || pressed.closest("button, input, [role='menu']")) return;
+
+    const container = event.currentTarget;
+    const startY = event.clientY;
+    let dragging = false;
+
+    const onMove = (move: PointerEvent) => {
+      if (!dragging) {
+        const rect = origin.getBoundingClientRect();
+        if (move.clientY >= rect.top && move.clientY <= rect.bottom) return;
+        dragging = true;
+        setLineDrag(true);
+      }
+      const top = Math.min(startY, move.clientY);
+      const bottom = Math.max(startY, move.clientY);
+      document.getSelection()?.removeAllRanges();
+      select(
+        Array.from(container.querySelectorAll<HTMLElement>("[data-block-id]"))
+          .filter((line) => {
+            const rect = line.getBoundingClientRect();
+            return rect.top < bottom && rect.bottom > top;
+          })
+          .map((line) => line.dataset.blockId ?? ""),
+      );
+    };
+
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      setLineDrag(false);
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+  };
+
+  const onPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
+    dragBox.onPointerDown(event);
+    onLinePointerDown(event);
+  };
 
   /** Keys that reach the page itself: the ones for the selected blocks. */
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -322,45 +377,51 @@ export function EditorCanvas() {
   };
 
   return (
-    // The page takes the keys while whole blocks are selected; its blocks take them otherwise.
-    // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-    <div
-      ref={canvasRef}
-      data-editor-canvas
-      tabIndex={-1}
-      className="relative mx-auto w-full max-w-3xl px-10 pt-10 pb-4 font-(family-name:--wr-editor-font) outline-none sm:px-14"
-      onKeyDown={onKeyDown}
-      onCopy={onCopy}
-      onCut={onCut}
-      onPaste={onPaste}
-      onDragOver={onDragOver}
-      onDragLeave={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDrop(null);
-      }}
-      onDrop={onDrop}
-      onPointerDown={locked ? undefined : dragBox.onPointerDown}
-    >
-      {blocks.map(row)}
+    // The space beside and under the page starts a drag box as the page itself does.
+    <div className="min-h-full" onPointerDown={locked ? undefined : onPointerDown}>
+      {/* The page takes the keys while whole blocks are selected; its blocks take them otherwise. */}
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+      <div
+        ref={canvasRef}
+        data-editor-canvas
+        tabIndex={-1}
+        className={cn(
+          "relative mx-auto w-full max-w-3xl px-10 pt-10 pb-4 font-(family-name:--wr-editor-font) outline-none sm:px-14",
+          lineDrag && "select-none",
+        )}
+        onKeyDown={onKeyDown}
+        onCopy={onCopy}
+        onCut={onCut}
+        onPaste={onPaste}
+        onDragOver={onDragOver}
+        onDragLeave={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDrop(null);
+        }}
+        onDrop={onDrop}
+      >
+        {blocks.map(row)}
 
-      {!locked && (
-        <button
-          type="button"
-          aria-label={t("editorAddLine")}
-          className="block h-24 w-full cursor-text"
-          onClick={() => store.getState().dispatch({ type: "clickAtEnd" })}
-        />
-      )}
+        {!locked && (
+          <button
+            type="button"
+            aria-label={t("editorAddLine")}
+            data-drag-surface
+            className="block h-24 w-full cursor-text"
+            onClick={() => store.getState().dispatch({ type: "clickAtEnd" })}
+          />
+        )}
 
-      {dragBox.box && (
-        <div
-          aria-hidden
-          className="pointer-events-none fixed z-10 border border-accent bg-selected-bg"
-          style={dragBox.box}
-        />
-      )}
+        {dragBox.box && (
+          <div
+            aria-hidden
+            className="pointer-events-none fixed z-10 border border-accent bg-selected-bg"
+            style={dragBox.box}
+          />
+        )}
 
-      <SelectionToolbar canvas={canvasRef} />
-      <SlashMenu canvas={canvasRef} />
+        <SelectionToolbar canvas={canvasRef} />
+        <SlashMenu canvas={canvasRef} />
+      </div>
     </div>
   );
 }

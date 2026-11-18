@@ -388,3 +388,72 @@ test("an answer of the AI is saved only once kept, and stays after a reload", as
   await page.reload();
   await expect(block(page, "Cheese")).toBeVisible();
 });
+
+/** Presses at [from], moves to [to] in steps as a hand does, and releases. */
+async function drag(page: Page, from: { x: number; y: number }, to: { x: number; y: number }) {
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 8 });
+  await page.mouse.up();
+}
+
+async function boxOf(page: Page, selector: string) {
+  const box = await page.locator(selector).boundingBox();
+  if (!box) throw new Error(`${selector} is not on the page`);
+  return box;
+}
+
+test("a drag from the margin selects the lines under its box", async ({ page }) => {
+  await open(page, twoLines());
+  const first = await boxOf(page, '[data-block-id="a"]');
+  const second = await boxOf(page, '[data-block-id="b"]');
+
+  // Further out than the handle that moves the line.
+  await drag(
+    page,
+    { x: first.x - 40, y: first.y + 4 },
+    { x: second.x + 60, y: second.y + second.height - 4 },
+  );
+  await expect(page.locator("[data-block-id][data-selected]")).toHaveCount(2);
+});
+
+test("a drag from the text of a line into another selects both lines", async ({ page }) => {
+  await open(page, twoLines());
+  const first = await boxOf(page, '[data-text-id="a"]');
+  const second = await boxOf(page, '[data-text-id="b"]');
+
+  await drag(
+    page,
+    { x: first.x + 10, y: first.y + first.height / 2 },
+    { x: second.x + 30, y: second.y + second.height / 2 },
+  );
+  await expect(page.locator("[data-block-id][data-selected]")).toHaveCount(2);
+});
+
+test("a drag from the empty space under the last line selects the lines", async ({ page }) => {
+  await open(page, twoLines());
+  const first = await boxOf(page, '[data-block-id="a"]');
+  const second = await boxOf(page, '[data-block-id="b"]');
+
+  await drag(
+    page,
+    { x: second.x + 200, y: second.y + second.height + 40 },
+    { x: first.x + 60, y: first.y + 4 },
+  );
+  await expect(page.locator("[data-block-id][data-selected]")).toHaveCount(2);
+});
+
+test("a drag from beside the page selects the lines", async ({ page }) => {
+  await open(page, twoLines());
+  const canvas = await boxOf(page, "[data-editor-canvas]");
+  const first = await boxOf(page, '[data-block-id="a"]');
+  const second = await boxOf(page, '[data-block-id="b"]');
+  test.skip(canvas.x < 12, "no space beside the page at this width");
+
+  await drag(
+    page,
+    { x: canvas.x - 6, y: first.y + 4 },
+    { x: second.x + 60, y: second.y + second.height - 4 },
+  );
+  await expect(page.locator("[data-block-id][data-selected]")).toHaveCount(2);
+});

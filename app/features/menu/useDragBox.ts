@@ -17,12 +17,13 @@ function intersects(rect: DOMRect, box: Box): boolean {
 /**
  * Selecting cards by dragging a box over them. The press has to start on the empty space
  * between the cards; the cards under the box are the ones marked with data-entry-id (or the
- * data attribute named by [item]).
+ * data attribute named by [item]). A control that stands for empty space starts a box too
+ * when it matches [item.surface].
  */
 export function useDragBox(
   onSelect: (ids: string[]) => void,
   onEmptyClick: () => void,
-  item: { selector: string; id: (element: HTMLElement) => string } = {
+  item: { selector: string; id: (element: HTMLElement) => string; surface?: string } = {
     selector: "[data-entry-id]",
     id: (element) => element.dataset.entryId ?? "",
   },
@@ -33,7 +34,8 @@ export function useDragBox(
     if (event.button !== 0 || event.pointerType === "touch") return;
 
     const pressed = event.target as HTMLElement;
-    if (pressed.closest(`${item.selector}, button, a, input, [role='menu']`)) return;
+    const onSurface = item.surface !== undefined && pressed.closest(item.surface) !== null;
+    if (!onSurface && pressed.closest(`${item.selector}, button, a, input, [role='menu']`)) return;
 
     const container = event.currentTarget;
     const start = { x: event.clientX, y: event.clientY };
