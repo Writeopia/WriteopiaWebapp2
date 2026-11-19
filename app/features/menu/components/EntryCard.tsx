@@ -1,4 +1,4 @@
-import { EllipsisVertical, Heart } from "lucide-react";
+import { Check, EllipsisVertical, Heart } from "lucide-react";
 import type { DragEvent, MouseEvent } from "react";
 import { Link } from "react-router";
 
@@ -75,7 +75,7 @@ export function EntryCard({
           : "rounded-lg border-card-border",
         arrangement === "grid" && "h-56",
         arrangement === "staggered_grid" && "mb-4 break-inside-avoid",
-        selected && "border-accent bg-selected-bg",
+        selected && "bg-highlight",
         isOver && "ring-2 ring-accent",
       )}
     >
@@ -95,17 +95,27 @@ export function EntryCard({
         )}
       </Link>
 
-      <input
-        type="checkbox"
-        checked={selected}
-        onChange={onToggle}
-        aria-label={t("selectItem", { title })}
+      <span
         className={cn(
-          "absolute left-3 size-4 accent-accent",
+          "absolute left-3 flex size-4",
           isList ? "top-1/2 -translate-y-1/2" : "top-3",
-          !selected && !selecting && "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+          !selected && !selecting && "opacity-0 group-hover:opacity-100 has-focus-visible:opacity-100",
         )}
-      />
+      >
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggle}
+          aria-label={t("selectItem", { title })}
+          className="peer size-4 cursor-pointer appearance-none rounded-sm border-2 border-accent bg-card-bg checked:bg-accent"
+        />
+        <Check
+          size={12}
+          strokeWidth={3}
+          aria-hidden
+          className="pointer-events-none absolute inset-0 m-auto hidden text-on-accent peer-checked:block"
+        />
+      </span>
 
       <div className={cn("absolute right-1", isList ? "top-1/2 -translate-y-1/2" : "top-1")}>
         <Menu

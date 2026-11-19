@@ -116,7 +116,7 @@ export function SearchScreen() {
 
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-6">
-          <div className="flex items-center gap-2 rounded-lg border border-card-border bg-card-bg px-3">
+          <div className="flex items-center gap-2 rounded-lg border border-card-border bg-card-bg px-3 transition-colors focus-within:border-text-lighter">
             <Search size={18} aria-hidden className="text-text-lighter" />
             <input
               ref={inputRef}
@@ -137,7 +137,7 @@ export function SearchScreen() {
                 setActive(0);
               }}
               onKeyDown={onKeyDown}
-              className="h-11 flex-1 bg-transparent text-on-bg outline-none placeholder:text-text-lighter"
+              className="wr-bare-input h-11 flex-1 bg-transparent text-on-bg outline-none placeholder:text-text-lighter"
             />
             {premium && waiting && <Spinner size={14} />}
           </div>
