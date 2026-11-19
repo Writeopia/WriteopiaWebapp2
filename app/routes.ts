@@ -26,6 +26,7 @@ export default [
     route("tag/:tagId", "routes/app/tag.tsx"),
     route("document/:documentId", "routes/app/document.tsx"),
     route("graph", "routes/app/graph.tsx"),
+    route("search", "routes/app/search.tsx"),
     route("notifications", "routes/app/notifications.tsx"),
   ]),
 ] satisfies RouteConfig;

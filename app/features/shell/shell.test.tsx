@@ -39,7 +39,7 @@ function renderShell() {
   return renderAppRoute(Shell, {
     path: appPaths.home,
     route: "/app/folder/:folderId",
-    destinations: [paths.workspaces, paths.login, "/app/document/:documentId"],
+    destinations: [paths.workspaces, paths.login, "/app/document/:documentId", appPaths.search],
   });
 }
 
@@ -68,7 +68,7 @@ describe("the side menu", () => {
       "href",
       appPaths.graph,
     );
-    expect(within(menu).getByRole("button", { name: "Search" })).toBeInTheDocument();
+    expect(within(menu).getByRole("link", { name: "Search" })).toBeInTheDocument();
     expect(within(menu).getByRole("button", { name: "Settings" })).toBeInTheDocument();
     await waitFor(() => expect(within(menu).queryByRole("status")).not.toBeInTheDocument());
   });
@@ -305,14 +305,11 @@ describe("the shell", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("opens the search over the page", async () => {
+  it("goes to the search screen", async () => {
     menuBackend();
     renderShell();
 
-    await userEvent.click(screen.getByRole("button", { name: "Search" }));
-    expect(screen.getByRole("dialog", { name: "Search" })).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: "Close" }));
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await userEvent.click(within(sideMenu()).getByRole("link", { name: "Search" }));
+    expect(await screen.findByText(`at ${appPaths.search}`)).toBeInTheDocument();
   });
 });

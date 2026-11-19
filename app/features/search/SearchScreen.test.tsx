@@ -12,15 +12,12 @@ import { apiUrl } from "../../../test/msw/handlers";
 import { menuBackend } from "../../../test/msw/menuBackend";
 import { server } from "../../../test/msw/server";
 import { renderAppRoute } from "../../../test/render";
-import { SearchDialog } from "./components/SearchDialog";
+import { SearchScreen } from "./components/SearchScreen";
 
-function Search() {
-  return <SearchDialog onClose={() => undefined} />;
-}
-
-function renderSearch(tier: "FREE" | "PREMIUM" = "PREMIUM") {
-  return renderAppRoute(Search, {
-    path: "/app",
+function renderSearch(tier: "FREE" | "PREMIUM" = "PREMIUM", search?: string) {
+  return renderAppRoute(SearchScreen, {
+    path: appPaths.search,
+    search,
     destinations: ["/app/document/:documentId"],
     session: { user: aUser({ tier }), workspace: aWorkspace() },
   });
@@ -50,7 +47,7 @@ function searchBackend() {
   return queries;
 }
 
-describe("the search dialog", () => {
+describe("the search screen", () => {
   it("shows the recently updated documents before anything is typed", async () => {
     menuBackend({ documents: [older, newer] });
     renderSearch();
@@ -119,6 +116,16 @@ describe("the search dialog", () => {
     expect(await screen.findByText("Nothing found.")).toBeInTheDocument();
   });
 
+  it("keeps the words in the address and starts from them", async () => {
+    menuBackend();
+    const queries = searchBackend();
+    renderSearch("PREMIUM", "?q=lisbon");
+
+    expect(screen.getByRole("combobox", { name: "Search documents" })).toHaveValue("lisbon");
+    expect(await screen.findByRole("listbox", { name: "Results" })).toBeInTheDocument();
+    await waitFor(() => expect(queries).toEqual(["lisbon"]));
+  });
+
   it("is for premium users only", () => {
     renderSearch("FREE");
 
@@ -128,7 +135,7 @@ describe("the search dialog", () => {
 });
 
 describe("the search shortcut", () => {
-  it("opens the search with ⌘K or Ctrl+K", async () => {
+  it("goes to the search with ⌘K or Ctrl+K", async () => {
     menuBackend();
     renderAppRoute(
       () => (
@@ -136,12 +143,12 @@ describe("the search shortcut", () => {
           <p>The screen</p>
         </AppShell>
       ),
-      { path: appPaths.home, route: "/app/folder/:folderId" },
+      { path: appPaths.home, route: "/app/folder/:folderId", destinations: [appPaths.search] },
     );
     await screen.findByRole("navigation", { name: "Side menu" });
 
     await userEvent.keyboard("{Control>}k{/Control}");
 
-    expect(screen.getByRole("dialog", { name: "Search" })).toBeInTheDocument();
+    expect(await screen.findByText(`at ${appPaths.search}`)).toBeInTheDocument();
   });
 });

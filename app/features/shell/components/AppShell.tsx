@@ -1,8 +1,9 @@
 import { type KeyboardEvent, type PointerEvent, type ReactNode, useEffect } from "react";
-import { useLocation, useSearchParams } from "react-router";
+import { useLocation, useNavigate, useSearchParams } from "react-router";
 
 import { t } from "~/core/i18n";
-import { SearchDialog } from "~/features/search/components/SearchDialog";
+import { appPaths } from "~/features/menu/paths";
+import { FOCUS_SEARCH_EVENT } from "~/features/search/components/SearchScreen";
 import { SettingsDialog } from "~/features/settings/components/SettingsDialog";
 
 import { SIDE_MENU_MAX_WIDTH, SIDE_MENU_MIN_WIDTH, useShellStore } from "../store";
@@ -16,26 +17,26 @@ const KEYBOARD_STEP = 16;
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const width = useShellStore((state) => state.width);
   const collapsed = useShellStore((state) => state.collapsed);
   const drawerOpen = useShellStore((state) => state.drawerOpen);
   const setDrawerOpen = useShellStore((state) => state.setDrawerOpen);
 
-  // ⌘K / Ctrl+K opens the search from anywhere in the app.
+  // ⌘K / Ctrl+K goes to the search from anywhere in the app; on the search, it focuses the field.
+  const onSearch = location.pathname === appPaths.search;
   useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key.toLowerCase() !== "k" || !(event.metaKey || event.ctrlKey)) return;
       if (event.altKey || event.shiftKey) return;
       event.preventDefault();
-      setSearchParams((params) => {
-        params.set("search", "1");
-        return params;
-      });
+      if (onSearch) window.dispatchEvent(new Event(FOCUS_SEARCH_EVENT));
+      else void navigate(appPaths.search);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [setSearchParams]);
+  }, [navigate, onSearch]);
 
   // Going somewhere from the drawer closes it.
   useEffect(() => setDrawerOpen(false), [location.pathname, setDrawerOpen]);
@@ -75,7 +76,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className="h-full min-w-0 flex-1">{children}</main>
 
       {searchParams.has("settings") && <SettingsDialog onClose={() => closeOverPage("settings")} />}
-      {searchParams.has("search") && <SearchDialog onClose={() => closeOverPage("search")} />}
     </div>
   );
 }

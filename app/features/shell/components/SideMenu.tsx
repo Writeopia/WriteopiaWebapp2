@@ -56,7 +56,7 @@ export function SideMenu() {
 
   const home = useFolderDrop({ id: ROOT_FOLDER_ID, title: t("home") }, move);
 
-  /** Search and Settings open over the page, in the address, so Back closes them. */
+  /** Settings open over the page, in the address, so Back closes them. */
   const openOverPage = (name: string, value: string) =>
     setSearchParams((params) => {
       params.set(name, value);
@@ -106,9 +106,10 @@ export function SideMenu() {
       </div>
 
       <div className="flex flex-col gap-0.5 px-2">
-        <ItemButton icon={Search} onClick={() => openOverPage("search", "1")}>
+        <NavLink to={appPaths.search} className={linkClasses}>
+          <Search size={16} aria-hidden />
           {t("search")}
-        </ItemButton>
+        </NavLink>
         <div {...home.dropProps} className={cn("rounded-md", home.isOver && "ring-2 ring-accent")}>
           <NavLink to={appPaths.home} className={linkClasses}>
             <House size={16} aria-hidden />

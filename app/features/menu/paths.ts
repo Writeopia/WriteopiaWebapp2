@@ -8,5 +8,6 @@ export const appPaths = {
   tag: (tagId: string) => `/app/tag/${encodeURIComponent(tagId)}`,
   document: (documentId: string) => `/app/document/${encodeURIComponent(documentId)}`,
   graph: "/app/graph",
+  search: "/app/search",
   notifications: "/app/notifications",
 } as const;
