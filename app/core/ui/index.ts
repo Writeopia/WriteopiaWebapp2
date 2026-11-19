@@ -1,4 +1,4 @@
-export { Button } from "./Button";
+export { Button, buttonClasses } from "./Button";
 export { cn } from "./cn";
 export { Dialog } from "./Dialog";
 export { ContextMenu, Menu, type MenuItem } from "./Menu";

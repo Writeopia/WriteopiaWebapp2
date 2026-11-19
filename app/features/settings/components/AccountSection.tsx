@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 
 import { t } from "~/core/i18n";
-import { Button, Dialog, Spinner, TextField } from "~/core/ui";
+import { Button, buttonClasses, Dialog, Spinner, TextField } from "~/core/ui";
 import { clearSession, paths } from "~/features/auth/session";
 import { useLogout } from "~/features/auth/useLogout";
 import { workspacesQuery } from "~/features/workspaces/api";
@@ -22,11 +22,11 @@ export function AccountSection() {
     <div className="flex flex-col gap-6">
       <SettingsGroup title={t("accountSection")}>
         <p className="text-sm text-on-bg">{t("account", { name: user.name, tier: user.tier })}</p>
-        <div className="flex flex-wrap items-center gap-4 text-sm">
-          <Link to={paths.workspaces} className="text-link underline">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link to={paths.workspaces} className={buttonClasses("secondary")}>
             {t("changeWorkspace")}
           </Link>
-          <Link to={paths.resetPassword} className="text-link underline">
+          <Link to={paths.resetPassword} className={buttonClasses("secondary")}>
             {t("resetPassword")}
           </Link>
           <Button variant="secondary" onClick={() => logout.mutate()}>

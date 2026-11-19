@@ -18,6 +18,18 @@ const variants: Record<ButtonVariant, string> = {
   danger: "bg-error text-global-bg hover:brightness-110",
 };
 
+/**
+ * The look of a button, for a link that should read as one (it still navigates as a link).
+ */
+export function buttonClasses(variant: ButtonVariant = "primary", className?: string): string {
+  return cn(
+    "inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium",
+    "transition disabled:cursor-not-allowed disabled:opacity-50",
+    variants[variant],
+    className,
+  );
+}
+
 export function Button({
   variant = "primary",
   loading = false,
@@ -32,12 +44,7 @@ export function Button({
       type={type}
       disabled={disabled === true || loading}
       aria-busy={loading || undefined}
-      className={cn(
-        "inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium",
-        "transition disabled:cursor-not-allowed disabled:opacity-50",
-        variants[variant],
-        className,
-      )}
+      className={buttonClasses(variant, className)}
       {...rest}
     >
       {loading && <Spinner size={16} />}
