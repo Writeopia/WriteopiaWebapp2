@@ -19,7 +19,7 @@ import { useDragBox } from "~/features/menu/useDragBox";
 
 import { BlockContent } from "../blocks/BlockContent";
 import { textElement } from "../blocks/EditableText";
-import { groupClasses, groupParts } from "../blocks/groups";
+import { groupParts, rowClasses, selectionParts } from "../blocks/groups";
 import { getCaret, setCaret } from "../dom/caret";
 import { readClipboard, textToBlocks, writeBlocks } from "../dom/clipboard";
 import { isMacPlatform, keyCommand } from "../dom/keymap";
@@ -92,12 +92,34 @@ export function EditorCanvas() {
     return () => document.removeEventListener("selectionchange", onSelectionChange);
   }, [store]);
 
+  // A press outside the editor lets go of the selected lines. The side panel and the
+  // controls (buttons, menus, dialogs) act on them, so a press there keeps them.
+  useEffect(() => {
+    const onPointerDown = (event: PointerEvent) => {
+      const { state: current, dispatch } = store.getState();
+      if (current.selectedIds.size === 0) return;
+      const target = event.target as Element | null;
+      if (!target || canvasRef.current?.parentElement?.contains(target)) return;
+      if (
+        target.closest(
+          "[data-keeps-selection], button, a, input, textarea, select, [role='menu'], [role='dialog'], [role='listbox']",
+        )
+      ) {
+        return;
+      }
+      dispatch({ type: "select", ids: [] });
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [store]);
+
   const select = (ids: string[]) => {
     store.getState().dispatch({ type: "select", ids });
     if (ids.length > 0) actions.focusCanvas();
   };
 
-  const dragBox = useDragBox(select, () => undefined, {
+  // A click (not a drag) on the empty space around the lines lets go of them too.
+  const dragBox = useDragBox(select, () => select([]), {
     selector: "[data-block-id]",
     id: (element) => element.dataset.blockId ?? "",
     surface: "[data-drag-surface]",
@@ -321,6 +343,7 @@ export function EditorCanvas() {
   };
 
   const parts = groupParts(blocks);
+  const selection = selectionParts(blocks, state.selectedIds);
 
   const row = (block: Block, index: number): ReactNode => {
     const selected = state.selectedIds.has(block.id);
@@ -331,9 +354,8 @@ export function EditorCanvas() {
         data-block-id={block.id}
         data-selected={selected || undefined}
         className={cn(
-          "group relative -mx-2 rounded-md px-2",
-          groupClasses(parts[index] ?? null),
-          selected && "bg-selected-bg",
+          "group relative",
+          rowClasses(parts[index] ?? null, selection[index] ?? null),
           hasTag(block, Tags.AI_SUGGESTION) && "border-l-2 border-accent bg-selected-bg/40",
           title && "mb-4",
         )}

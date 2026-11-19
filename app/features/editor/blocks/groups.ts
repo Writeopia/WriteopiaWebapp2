@@ -33,19 +33,49 @@ export function groupParts(blocks: Block[]): GroupPart[] {
   });
 }
 
-export function groupClasses(part: GroupPart): string | false {
-  if (!part) return false;
+/**
+ * Where a selected line sits in its run of selected lines, which decides its round corners.
+ * A run ends where a box or card starts or ends, since the rows there have another width.
+ */
+export type SelectionPart = { first: boolean; last: boolean } | null;
+
+export function selectionParts(blocks: Block[], selectedIds: ReadonlySet<string>): SelectionPart[] {
+  return blocks.map((block, index) => {
+    if (!selectedIds.has(block.id)) return null;
+    const before = blocks[index - 1];
+    const after = blocks[index + 1];
+    const joins = (other: Block | undefined) =>
+      other !== undefined && selectedIds.has(other.id) && kindOf(other) === kindOf(block);
+    return { first: !joins(before), last: !joins(after) };
+  });
+}
+
+/**
+ * The shape of a row: its margin, padding, corners and background. Only the outer corners of
+ * a group or of a run of selected lines are round, as DefaultTagDecoration of the Kotlin SDK
+ * does, so the lines in the middle join the ones around them with no seam. Each row gets one
+ * of each property, never two that fight over it.
+ */
+export function rowClasses(group: GroupPart, selection: SelectionPart = null): string {
+  if (!group) {
+    return cn(
+      "-mx-2 px-2",
+      selection && "bg-selected-bg",
+      selection?.first && "rounded-t-md",
+      selection?.last && "rounded-b-md",
+    );
+  }
   const shape = cn(
     "mx-0 px-3",
-    part.first && "mt-1 rounded-t-lg pt-2",
-    part.last && "mb-1 rounded-b-lg pb-2",
+    group.first && "mt-1 rounded-t-lg pt-2",
+    group.last && "mb-1 rounded-b-lg pb-2",
   );
-  return part.kind === "box"
-    ? cn(shape, "bg-highlight/60")
-    : cn(
-        shape,
-        "border-x border-card-border bg-card-bg",
-        part.first && "border-t",
-        part.last && "border-b",
-      );
+  if (group.kind === "box") return cn(shape, selection ? "bg-selected-bg" : "bg-highlight/60");
+  return cn(
+    shape,
+    "border-x border-card-border",
+    selection ? "bg-selected-bg" : "bg-card-bg",
+    group.first && "border-t",
+    group.last && "border-b",
+  );
 }

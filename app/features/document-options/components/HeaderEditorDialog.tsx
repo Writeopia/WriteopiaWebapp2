@@ -111,7 +111,36 @@ export function HeaderEditorDialog({ onClose }: { onClose: () => void }) {
       onClose={onClose}
       title={t("headerTitle")}
       className="w-[min(40rem,calc(100vw-2rem))]"
-      actions={<Button onClick={onClose}>{t("done")}</Button>}
+      // The buttons for the drawn picture sit in the same row as Done.
+      actions={
+        <>
+          {generation.kind !== "idle" && (
+            <>
+              <Button variant="secondary" onClick={discard}>
+                {generation.kind === "generating" ? t("cancel") : t("headerDiscard")}
+              </Button>
+              {generation.kind !== "generating" && (
+                <Button
+                  variant="secondary"
+                  onClick={generate}
+                  disabled={generation.kind === "generated" && generation.saving}
+                >
+                  {generation.kind === "failed" ? t("retry") : t("headerTryAnother")}
+                </Button>
+              )}
+              {generation.kind === "generated" &&
+                (generation.saveFailed ? (
+                  <Button onClick={() => keep(generation.url)}>{t("headerSaveAgain")}</Button>
+                ) : (
+                  <Button loading={generation.saving} onClick={() => use(generation.url)}>
+                    {t("headerUseImage")}
+                  </Button>
+                ))}
+            </>
+          )}
+          <Button onClick={onClose}>{t("done")}</Button>
+        </>
+      }
     >
       <div className="flex max-h-[70vh] flex-col gap-5 overflow-y-auto">
         <div role="radiogroup" aria-label={t("headerColors")} className="flex flex-wrap gap-3">
@@ -214,29 +243,6 @@ export function HeaderEditorDialog({ onClose }: { onClose: () => void }) {
                 {t("headerSaveFailed")}
               </p>
             )}
-
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button variant="secondary" onClick={discard}>
-                {generation.kind === "generating" ? t("cancel") : t("headerDiscard")}
-              </Button>
-              {generation.kind !== "generating" && (
-                <Button
-                  variant="secondary"
-                  onClick={generate}
-                  disabled={generation.kind === "generated" && generation.saving}
-                >
-                  {generation.kind === "failed" ? t("retry") : t("headerTryAnother")}
-                </Button>
-              )}
-              {generation.kind === "generated" &&
-                (generation.saveFailed ? (
-                  <Button onClick={() => keep(generation.url)}>{t("headerSaveAgain")}</Button>
-                ) : (
-                  <Button loading={generation.saving} onClick={() => use(generation.url)}>
-                    {t("headerUseImage")}
-                  </Button>
-                ))}
-            </div>
           </section>
         )}
       </div>

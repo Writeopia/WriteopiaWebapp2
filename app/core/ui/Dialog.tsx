@@ -66,7 +66,7 @@ export function Dialog({
             {title}
           </h2>
           <div className="text-text-light">{children}</div>
-          {actions && <div className="flex justify-end gap-2">{actions}</div>}
+          {actions && <div className="flex flex-wrap justify-end gap-2">{actions}</div>}
         </div>
       )}
     </dialog>

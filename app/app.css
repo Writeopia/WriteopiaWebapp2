@@ -127,6 +127,11 @@ body {
   outline: none;
 }
 
+/* The page takes the focus while whole lines are selected; the lines show it, not a ring. */
+[data-editor-canvas]:focus-visible {
+  outline: none;
+}
+
 /* The hint of an empty block: always for the title, on the line being written otherwise. */
 .wr-editable:empty::before {
   content: attr(data-placeholder);

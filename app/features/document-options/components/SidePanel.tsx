@@ -46,6 +46,8 @@ export function SidePanel({ onClose }: { onClose: () => void }) {
   return (
     <aside
       aria-label={t("sidePanel")}
+      // Its actions work on the selected lines, so a press here keeps them selected.
+      data-keeps-selection
       className="flex w-72 shrink-0 flex-col border-l border-divider bg-global-bg"
     >
       <div className="flex items-center gap-1 border-b border-divider p-2">

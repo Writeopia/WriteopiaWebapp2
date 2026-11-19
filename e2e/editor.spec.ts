@@ -457,3 +457,43 @@ test("a drag from beside the page selects the lines", async ({ page }) => {
   );
   await expect(page.locator("[data-block-id][data-selected]")).toHaveCount(2);
 });
+
+test("the page shows no focus ring while lines are selected", async ({ page }) => {
+  await open(page, twoLines());
+  const first = await boxOf(page, '[data-block-id="a"]');
+  const second = await boxOf(page, '[data-block-id="b"]');
+
+  await drag(
+    page,
+    { x: first.x - 40, y: first.y + 4 },
+    { x: second.x + 60, y: second.y + second.height - 4 },
+  );
+  await expect(page.locator("[data-block-id][data-selected]")).toHaveCount(2);
+  await expect(page.locator("[data-editor-canvas]")).toBeFocused();
+  await expect(page.locator("[data-editor-canvas]")).toHaveCSS("outline-style", "none");
+});
+
+test("a click outside the lines lets go of the selected lines", async ({ page }) => {
+  await open(page, twoLines());
+  const first = await boxOf(page, '[data-block-id="a"]');
+  const second = await boxOf(page, '[data-block-id="b"]');
+  const selectLines = () =>
+    drag(
+      page,
+      { x: first.x - 40, y: first.y + 4 },
+      { x: second.x + 60, y: second.y + second.height - 4 },
+    );
+  const selected = page.locator("[data-block-id][data-selected]");
+
+  // On the empty space of the page.
+  await selectLines();
+  await expect(selected).toHaveCount(2);
+  await page.mouse.click(second.x + 200, second.y + second.height + 40);
+  await expect(selected).toHaveCount(0);
+
+  // Outside the editor, on the empty part of the menu.
+  await selectLines();
+  await expect(selected).toHaveCount(2);
+  await page.mouse.click(5, 600);
+  await expect(selected).toHaveCount(0);
+});

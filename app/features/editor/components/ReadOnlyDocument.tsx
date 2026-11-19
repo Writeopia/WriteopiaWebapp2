@@ -4,7 +4,7 @@ import type { Document } from "~/core/models";
 import { cn } from "~/core/ui";
 
 import { BlockContent } from "../blocks/BlockContent";
-import { groupClasses, groupParts } from "../blocks/groups";
+import { groupParts, rowClasses } from "../blocks/groups";
 import { isTitle } from "../state/blocks";
 import { ordered } from "../state/reducer";
 import { createEditorStore, EditorStoreContext } from "../state/store";
@@ -60,8 +60,8 @@ export function ReadOnlyDocument({
                 key={block.id}
                 data-block-id={block.id}
                 className={cn(
-                  "relative -mx-2 rounded-md px-2",
-                  groupClasses(parts[index] ?? null),
+                  "relative",
+                  rowClasses(parts[index] ?? null),
                   isTitle(block) && "mb-4",
                 )}
               >
