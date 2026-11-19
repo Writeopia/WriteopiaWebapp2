@@ -9,6 +9,7 @@ import {
   List,
   Lock,
   Minus,
+  PenTool,
   Plus,
   Redo2,
   Search,
@@ -22,10 +23,11 @@ import { useRef } from "react";
 import { t } from "~/core/i18n";
 import { StoryTypes, Tags } from "~/core/models";
 import { Menu, type MenuItem } from "~/core/ui";
+import { useDrawingDialog } from "~/features/drawing/dialogs";
 
 import { pickFiles } from "../dom/files";
-import { targetIds } from "../state/reducer";
-import { useEditor } from "../state/store";
+import { ordered, targetIds } from "../state/reducer";
+import { useEditor, useEditorStoreApi } from "../state/store";
 import type { SyncStatus } from "../sync/stepSync";
 import { useEditorActions } from "./editorContext";
 
@@ -44,6 +46,8 @@ export function EditorToolbar({ status, onRetry }: { status: SyncStatus; onRetry
   const redo = useEditor((store) => store.redo);
   const setSearch = useEditor((store) => store.setSearch);
   const { insertMedia, addPage } = useEditorActions();
+  const editor = useEditorStoreApi();
+  const openDrawing = useDrawingDialog((state) => state.open);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const items: MenuItem[] = [
@@ -120,6 +124,18 @@ export function EditorToolbar({ status, onRetry }: { status: SyncStatus; onRetry
       label: t("editorVideo"),
       icon: <Video size={16} />,
       onSelect: () => pickFiles(fileInput.current, "video/*"),
+    },
+    {
+      id: "drawing",
+      label: t("drawingAdd"),
+      icon: <PenTool size={16} />,
+      onSelect: () => {
+        // After the line being written, or at the end of the document.
+        const { state } = editor.getState();
+        const order = ordered(state);
+        const afterId = state.focus?.id ?? order[order.length - 1]?.id ?? null;
+        openDrawing({ kind: "new", afterId });
+      },
     },
     {
       id: "page",

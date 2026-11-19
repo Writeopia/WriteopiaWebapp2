@@ -12,6 +12,7 @@ import {
   type EditorActions,
   EditorActionsContext,
 } from "~/features/editor/components/editorContext";
+import { EditorToolbar } from "~/features/editor/components/EditorToolbar";
 import { find, ordered } from "~/features/editor/state/reducer";
 import { createEditorStore, EditorStoreContext, useEditor } from "~/features/editor/state/store";
 
@@ -44,6 +45,7 @@ function Blocks() {
           <BlockContent block={block} readOnly={false} />
         </div>
       ))}
+      <EditorToolbar status="saved" onRetry={noop} />
       <DrawingHost />
     </>
   );
@@ -182,6 +184,16 @@ describe("a drawing in the document", () => {
     expect(blocks[1]!.type).toEqual(StoryTypes.DRAWING);
     expect(blocks.filter((each) => each.type.number === StoryTypes.DRAWING.number)).toHaveLength(2);
     expect(parseDrawing(blocks[1]!.text)?.strokes).toHaveLength(1);
+  });
+
+  it("is added from the + menu of the editor", async () => {
+    renderEditor(documentWith(SCRIBBLE));
+
+    await userEvent.click(screen.getByRole("button", { name: "Insert and change blocks" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Add drawing" }));
+
+    expect(await screen.findByRole("dialog", { name: "Drawing" })).toBeInTheDocument();
+    expect(useDrawingDialog.getState().target).toEqual({ kind: "new", afterId: "drawing" });
   });
 
   it("becomes the equation the AI reads in it", async () => {

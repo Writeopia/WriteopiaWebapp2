@@ -9,7 +9,6 @@ import {
   Lock,
   LockOpen,
   MoreHorizontal,
-  PenTool,
   Search,
   Smile,
   Tags,
@@ -18,9 +17,7 @@ import {
 
 import { t } from "~/core/i18n";
 import { Menu, type MenuItem } from "~/core/ui";
-import { useDrawingDialog } from "~/features/drawing/dialogs";
-import { ordered } from "~/features/editor/state/reducer";
-import { useEditor, useEditorStoreApi } from "~/features/editor/state/store";
+import { useEditor } from "~/features/editor/state/store";
 
 import { useDocumentOptions } from "../context";
 
@@ -33,8 +30,6 @@ const ICON_SIZE = 16;
 export function useDocumentActionItems(): MenuItem[] {
   const options = useDocumentOptions();
   const setSearch = useEditor((store) => store.setSearch);
-  const editor = useEditorStoreApi();
-  const openDrawing = useDrawingDialog((state) => state.open);
   const { document, open } = options;
   const locked = document.isLocked;
 
@@ -84,19 +79,6 @@ export function useDocumentActionItems(): MenuItem[] {
         <Lock size={ICON_SIZE} aria-hidden />
       ),
       onSelect: () => options.change({ isLocked: !locked }),
-    },
-    {
-      id: "drawing",
-      label: t("drawingAdd"),
-      icon: <PenTool size={ICON_SIZE} aria-hidden />,
-      disabled: locked,
-      onSelect: () => {
-        // After the line being written, or at the end of the document.
-        const { state } = editor.getState();
-        const order = ordered(state);
-        const afterId = state.focus?.id ?? order[order.length - 1]?.id ?? null;
-        openDrawing({ kind: "new", afterId });
-      },
     },
     {
       id: "find",
