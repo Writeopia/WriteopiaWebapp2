@@ -407,7 +407,7 @@ export function EditorCanvas() {
         data-editor-canvas
         tabIndex={-1}
         className={cn(
-          "relative mx-auto w-full max-w-3xl px-10 pt-10 pb-4 font-(family-name:--wr-editor-font) outline-none sm:px-14",
+          "relative mx-auto w-full max-w-[52rem] px-10 pt-10 pb-4 font-(family-name:--wr-editor-font) outline-none sm:px-14",
           lineDrag && "select-none",
         )}
         onKeyDown={onKeyDown}

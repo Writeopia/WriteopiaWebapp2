@@ -54,7 +54,7 @@ export function ReadOnlyDocument({
     <EditorStoreContext value={store}>
       <EditorActionsContext value={actions}>
         <TitleFrameContext value={titleFrame ?? null}>
-          <article className="mx-auto w-full max-w-3xl px-6 pt-10 pb-16 sm:px-14">
+          <article className="mx-auto w-full max-w-[52rem] px-6 pt-10 pb-16 sm:px-14">
             {blocks.map((block, index) => (
               <div
                 key={block.id}

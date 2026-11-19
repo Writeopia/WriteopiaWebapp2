@@ -139,7 +139,7 @@ function CommandField() {
 function Bar({ children }: { children: React.ReactNode }) {
   return (
     <div className="shrink-0 border-t border-divider bg-global-bg px-3 py-2">
-      <div className="mx-auto flex w-full max-w-3xl items-center gap-2">{children}</div>
+      <div className="mx-auto flex w-full max-w-[52rem] items-center gap-2">{children}</div>
     </div>
   );
 }
