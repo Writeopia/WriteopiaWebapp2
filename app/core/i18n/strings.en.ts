@@ -182,7 +182,6 @@ export const en = {
   clearSelection: "Clear the selection",
   selectItem: "Select {title}",
   actionsFor: "Actions for {title}",
-  itemCount: "{count} items",
   folderScreenEmpty: "This folder is empty.",
   folderScreenCreateNote: "Create a note",
   favoritesScreenEmpty: "No favorite documents yet.",

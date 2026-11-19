@@ -4,6 +4,7 @@ import { http, HttpResponse } from "msw";
 import { useParams } from "react-router";
 import { describe, expect, it } from "vitest";
 
+import { relativeTime } from "~/core/i18n";
 import { ROOT_FOLDER_ID } from "~/core/models";
 import { readPreference } from "~/core/storage";
 
@@ -78,7 +79,8 @@ describe("MenuScreen, a folder", () => {
     expect(await screen.findByRole("heading", { name: "Work" })).toBeInTheDocument();
 
     expect(cardTitles()).toEqual(["Work", "Groceries", "Trip", "Untitled"]);
-    expect(within(card("Work")).getByText("1 items")).toBeInTheDocument();
+    // A folder shows when it was last changed, not how many items it holds.
+    expect(within(card("Work")).getByText(relativeTime(work.lastUpdatedAt))).toBeInTheDocument();
     expect(within(card("Groceries")).getByText("Corn")).toBeInTheDocument();
     expect(within(card("Trip")).getByText("Pack the bags")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Home", level: 1 })).toBeInTheDocument();
@@ -444,7 +446,6 @@ describe("MenuScreen, a folder", () => {
         "work",
       ]),
     );
-    expect(await within(card("Work")).findByText("2 items")).toBeInTheDocument();
   });
 
   it("does not take a folder dropped on itself", async () => {

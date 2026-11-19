@@ -2,7 +2,7 @@ import { EllipsisVertical, Heart } from "lucide-react";
 import type { DragEvent, MouseEvent } from "react";
 import { Link } from "react-router";
 
-import { t } from "~/core/i18n";
+import { relativeTime, t } from "~/core/i18n";
 import { cn, Menu, type MenuItem } from "~/core/ui";
 
 import { useDragStore, useFolderDrop } from "../dnd";
@@ -134,9 +134,7 @@ function ListRow({ entry, title }: { entry: MenuEntry; title: string }) {
       <h3 className="max-w-[40%] shrink-0 truncate font-medium">{title}</h3>
       {entryIsFavorite(entry) && <FavoriteMark />}
       <span className="min-w-0 flex-1 truncate text-sm text-text-lighter">
-        {entry.kind === "folder"
-          ? t("itemCount", { count: entry.folder.itemCount })
-          : previewSnippet(entry.document)}
+        {entry.kind === "document" && previewSnippet(entry.document)}
       </span>
       <time
         dateTime={new Date(updatedAt).toISOString()}
@@ -174,9 +172,13 @@ function CardBody({
           {entryIsFavorite(entry) && <FavoriteMark />}
         </div>
         {entry.kind === "folder" ? (
-          <p className="text-sm text-text-lighter">
-            {t("itemCount", { count: entry.folder.itemCount })}
-          </p>
+          // When the folder was last changed, as the Swift app shows it.
+          <time
+            dateTime={new Date(entry.folder.lastUpdatedAt).toISOString()}
+            className="text-sm text-text-lighter"
+          >
+            {relativeTime(entry.folder.lastUpdatedAt)}
+          </time>
         ) : (
           <div className="min-h-0 flex-1 overflow-hidden">
             <DocumentPreview

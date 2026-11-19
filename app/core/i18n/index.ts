@@ -1,5 +1,6 @@
 import { en, type StringKey } from "./strings.en";
 
+export { relativeTime } from "./relativeTime";
 export type { StringKey };
 
 type Dictionary = Record<StringKey, string>;
