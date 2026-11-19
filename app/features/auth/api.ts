@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { api, ApiError, renewSession } from "~/core/api";
-import { type User, userSchema } from "~/core/models";
+import { tierSchema, type User, userSchema } from "~/core/models";
 
 /**
  * The account endpoints, as AuthApi.kt of the Compose app calls them. The web session is two
@@ -33,6 +33,16 @@ const legalDocumentSchema = z.object({
   title: z.string(),
   sections: z.array(z.object({ heading: z.string(), body: z.string() })),
 });
+
+export const subscriptionSchema = z.object({
+  premium: z.boolean(),
+  tier: tierSchema,
+  monthlyPriceCents: z.number().nullish(),
+  currency: z.string().nullish(),
+});
+
+/** Whether the account may use the cloud, and what the subscription costs. */
+export type Subscription = z.infer<typeof subscriptionSchema>;
 
 export type LegalDocument = z.infer<typeof legalDocumentSchema>;
 export type LegalDocumentType = "terms" | "privacy";
@@ -86,6 +96,14 @@ export async function findSessionUser(): Promise<User | null> {
 function nullWithoutSession(error: unknown): null {
   if (error instanceof ApiError && (error.isUnauthorized || error.isForbidden)) return null;
   throw error;
+}
+
+/**
+ * Whether the signed-in user has a subscription: the source of truth for the paywall, whatever
+ * tier the login answered with. An expired session is renewed first, like [getSessionUser].
+ */
+export function getSubscription(): Promise<Subscription> {
+  return api.get("/auth/subscription", subscriptionSchema);
 }
 
 /**

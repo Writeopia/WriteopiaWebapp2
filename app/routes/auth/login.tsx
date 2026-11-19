@@ -3,7 +3,7 @@ import { type FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router";
 
 import { t } from "~/core/i18n";
-import { Button, TextField } from "~/core/ui";
+import { Button, PasswordField, TextField } from "~/core/ui";
 import { login } from "~/features/auth/api";
 import { AuthCard, FormError } from "~/features/auth/components/AuthCard";
 import { paths, setSessionUser } from "~/features/auth/session";
@@ -65,9 +65,8 @@ export default function Login() {
           value={identifier}
           onChange={(event) => setIdentifier(event.target.value)}
         />
-        <TextField
+        <PasswordField
           label={t("password")}
-          type="password"
           autoComplete="current-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}

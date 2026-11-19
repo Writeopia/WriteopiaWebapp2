@@ -3,6 +3,7 @@ export { cn } from "./cn";
 export { Dialog } from "./Dialog";
 export { ContextMenu, Menu, type MenuItem } from "./Menu";
 export { OfflineBanner } from "./OfflineBanner";
+export { PasswordField } from "./PasswordField";
 export { Spinner } from "./Spinner";
 export { TextField } from "./TextField";
 export { showToast, type Toast, type ToastKind, useToastStore } from "./toast";

@@ -6,7 +6,7 @@ import { queryClient } from "~/core/query/queryClient";
 import { selectWorkspace } from "~/features/workspaces/api";
 
 import { aUser, aWorkspace } from "../../../test/fixtures";
-import { apiUrl, signedIn } from "../../../test/msw/handlers";
+import { apiUrl, aSubscription, signedIn } from "../../../test/msw/handlers";
 import { server } from "../../../test/msw/server";
 import {
   clearSession,
@@ -17,7 +17,9 @@ import {
   loadSessionUser,
   paths,
   requireSession,
+  requireSignedIn,
   requireWorkspace,
+  setSessionUser,
 } from "./session";
 
 /** The path a guard redirected to; null when it let the route open. */
@@ -58,20 +60,25 @@ describe("decideStart", () => {
   const workspaces = [aWorkspace({ id: "w1" }), aWorkspace({ id: "w2" })];
 
   it("goes to the login without a session", () => {
-    expect(decideStart(null, [], null)).toBe(paths.login);
-    expect(decideStart(null, workspaces, "w1")).toBe(paths.login);
+    expect(decideStart(null, false, [], null)).toBe(paths.login);
+    expect(decideStart(null, true, workspaces, "w1")).toBe(paths.login);
+  });
+
+  it("goes to the paywall without a subscription", () => {
+    expect(decideStart(aUser(), false, workspaces, "w1")).toBe(paths.paywall);
+    expect(decideStart(aUser(), false, [], null)).toBe(paths.paywall);
   });
 
   it("goes to the choice of a workspace when none is selected", () => {
-    expect(decideStart(aUser(), workspaces, null)).toBe(paths.workspaces);
+    expect(decideStart(aUser(), true, workspaces, null)).toBe(paths.workspaces);
   });
 
   it("goes to the choice of a workspace when the selected one is gone", () => {
-    expect(decideStart(aUser(), workspaces, "deleted")).toBe(paths.workspaces);
+    expect(decideStart(aUser(), true, workspaces, "deleted")).toBe(paths.workspaces);
   });
 
   it("goes to the app with a session and a workspace", () => {
-    expect(decideStart(aUser(), workspaces, "w2")).toBe(paths.app);
+    expect(decideStart(aUser(), true, workspaces, "w2")).toBe(paths.app);
   });
 });
 
@@ -194,6 +201,63 @@ describe("guards", () => {
       user: aUser(),
       workspace: aWorkspace({ id: "w2", name: "Team" }),
     });
+  });
+
+  it("requireSession sends a user without a subscription to the paywall", async () => {
+    server.use(...signedIn(aUser(), { premium: false }));
+
+    expect(await redirectOf(requireSession)).toBe(paths.paywall);
+  });
+
+  it("requireSession sends to the paywall when the subscription cannot be asked", async () => {
+    server.use(...signedIn(aUser()));
+    server.use(http.get(apiUrl("/auth/subscription"), () => HttpResponse.error()));
+
+    expect(await redirectOf(requireSession)).toBe(paths.paywall);
+  });
+
+  it("requireSession asks for the subscription once per page", async () => {
+    let requests = 0;
+    server.use(...signedIn(aUser()));
+    server.use(
+      http.get(apiUrl("/auth/subscription"), () => {
+        requests++;
+        return HttpResponse.json(aSubscription(true));
+      }),
+    );
+
+    await requireSession();
+    await requireSession();
+
+    expect(requests).toBe(1);
+  });
+
+  it("asks for the subscription again after a new sign-in", async () => {
+    let premium = false;
+    server.use(...signedIn(aUser()));
+    server.use(
+      http.get(apiUrl("/auth/subscription"), () => HttpResponse.json(aSubscription(premium))),
+    );
+    expect(await redirectOf(requireSession)).toBe(paths.paywall);
+
+    premium = true;
+    setSessionUser(aUser());
+
+    expect(await requireSession()).toEqual(aUser());
+  });
+
+  it("requireSignedIn lets a user without a subscription in", async () => {
+    server.use(...signedIn(aUser(), { premium: false }));
+
+    expect(await requireSignedIn()).toEqual(aUser());
+  });
+
+  it("requireWorkspace sends a user without a subscription to the paywall", async () => {
+    server.use(...signedIn(aUser(), { premium: false }));
+    withWorkspaces(aWorkspace({ id: "w1" }));
+    selectWorkspace("w1");
+
+    expect(await redirectOf(requireWorkspace)).toBe(paths.paywall);
   });
 
   it("guestOnly lets a guest in without asking the backend", async () => {
