@@ -22,6 +22,7 @@ import { textElement } from "../blocks/EditableText";
 import { groupParts, rowClasses, selectionParts } from "../blocks/groups";
 import { getCaret, setCaret } from "../dom/caret";
 import { readClipboard, textToBlocks, writeBlocks } from "../dom/clipboard";
+import { isMedia } from "../dom/files";
 import { isMacPlatform, keyCommand } from "../dom/keymap";
 import { hasTag, isTextBlock, isTitle, newBlock } from "../state/blocks";
 import { ordered } from "../state/reducer";
@@ -269,8 +270,8 @@ export function EditorCanvas() {
       store
         .getState()
         .dispatch({ type: "insertBlocks", blocks: pasted.blocks, afterId: after, focusEnd: true });
-    } else if (pasted.kind === "images") {
-      actions.insertImages(pasted.files, after);
+    } else if (pasted.kind === "media") {
+      actions.insertMedia(pasted.files, after);
     } else if (pasted.kind === "text") {
       const pastedBlocks = textToBlocks(pasted.text) ?? [
         newBlock(StoryTypes.TEXT, { text: pasted.text }),
@@ -323,10 +324,8 @@ export function EditorCanvas() {
       store.getState().dispatch({ type: "move", ids, afterId });
       return;
     }
-    const images = Array.from(event.dataTransfer.files).filter((file) =>
-      file.type.startsWith("image/"),
-    );
-    if (images.length > 0) actions.insertImages(images, afterId);
+    const media = Array.from(event.dataTransfer.files).filter(isMedia);
+    if (media.length > 0) actions.insertMedia(media, afterId);
   };
 
   const onHandleDragStart = (event: DragEvent<HTMLElement>, block: Block) => {

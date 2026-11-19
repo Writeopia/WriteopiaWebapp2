@@ -51,7 +51,7 @@ function Blocks() {
 
 const noop = () => undefined;
 const actions: EditorActions = {
-  insertImages: noop,
+  insertMedia: noop,
   openLinkDialog: noop,
   addPage: noop,
   openDocument: noop,

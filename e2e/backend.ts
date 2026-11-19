@@ -115,7 +115,8 @@ export class FakeBackend {
       return json({ serverTimestamp: Date.now(), updatedSteps: [], deletedIds: [] });
     }
     if (path === "/media/upload") {
-      const url = `https://images.example/${this.uploads.length + 1}.png`;
+      const extension = (request.postData() ?? "").includes("video/") ? "mp4" : "png";
+      const url = `https://images.example/${this.uploads.length + 1}.${extension}`;
       this.uploads.push(url);
       return json({ imageUrl: url }, 201);
     }

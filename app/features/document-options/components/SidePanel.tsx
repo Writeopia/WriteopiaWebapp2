@@ -11,6 +11,7 @@ import {
   List,
   Square,
   SquareDashed,
+  Video,
   X,
 } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
@@ -20,6 +21,7 @@ import { type Span, Spans, StoryTypes, Tags } from "~/core/models";
 import { cn } from "~/core/ui";
 import { AiPanel } from "~/features/ai/components/AiPanel";
 import { useEditorActions } from "~/features/editor/components/editorContext";
+import { pickFiles } from "~/features/editor/dom/files";
 import { targetIds } from "~/features/editor/state/reducer";
 import { useEditor } from "~/features/editor/state/store";
 
@@ -205,7 +207,7 @@ function TextOptions() {
   const hasTarget = useEditor((store) => targetIds(store.state).length > 0);
   const focus = useEditor((store) => store.state.focus);
   const dispatch = useEditor((store) => store.dispatch);
-  const { insertImages, addPage, openLinkDialog } = useEditorActions();
+  const { insertMedia, addPage, openLinkDialog } = useEditorActions();
   const fileInput = useRef<HTMLInputElement>(null);
 
   if (readOnly) return <p className="text-sm text-text-lighter">{t("editorLockedHint")}</p>;
@@ -293,7 +295,12 @@ function TextOptions() {
         <OptionButton
           label={t("editorImage")}
           icon={<Image size={16} aria-hidden />}
-          onClick={() => fileInput.current?.click()}
+          onClick={() => pickFiles(fileInput.current, "image/*")}
+        />
+        <OptionButton
+          label={t("editorVideo")}
+          icon={<Video size={16} aria-hidden />}
+          onClick={() => pickFiles(fileInput.current, "video/*")}
         />
         <OptionButton
           label={t("editorAddPage")}
@@ -317,7 +324,7 @@ function TextOptions() {
           onChange={(event) => {
             const files = Array.from(event.target.files ?? []);
             event.target.value = "";
-            if (files.length > 0) insertImages(files, focus?.id ?? null);
+            if (files.length > 0) insertMedia(files, focus?.id ?? null);
           }}
         />
       </Section>

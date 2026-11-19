@@ -8,7 +8,7 @@ import type { SpanInfo, StoryStep, StoryType } from "~/core/models";
 /** A step in the editor. */
 export type Block = StoryStep & {
   /**
-   * Only on this screen: never saved nor sent (an image still uploading). The other apps
+   * Only on this screen: never saved nor sent (an image or a video still uploading). The other apps
    * mark the same steps by their type (loading, skeleton).
    */
   ephemeral?: boolean;

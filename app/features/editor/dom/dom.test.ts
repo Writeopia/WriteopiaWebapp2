@@ -226,4 +226,13 @@ describe("clipboard", () => {
     expect(textToBlocks("one line\n")).toBeNull();
     expect(textToBlocks("a\n- b")?.map((block) => block.text)).toEqual(["a", "b"]);
   });
+
+  it("reads pictures and videos as media, leaving other files out", () => {
+    const clipboard = transfer();
+    const photo = new File([], "photo.png", { type: "image/png" });
+    const clip = new File([], "clip.mp4", { type: "video/mp4" });
+    const notes = new File([], "notes.pdf", { type: "application/pdf" });
+    clipboard.files = [photo, clip, notes] as unknown as FileList;
+    expect(readClipboard(clipboard)).toEqual({ kind: "media", files: [photo, clip] });
+  });
 });

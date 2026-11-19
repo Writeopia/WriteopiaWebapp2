@@ -310,8 +310,8 @@ export function EditableText({
       case "blocks":
         dispatch({ type: "pasteBlocks", caret: { id, ...caret }, blocks: pasted.blocks });
         return;
-      case "images":
-        actions.insertImages(pasted.files, id);
+      case "media":
+        actions.insertMedia(pasted.files, id);
         return;
       case "text": {
         // An address pasted on selected text links it.

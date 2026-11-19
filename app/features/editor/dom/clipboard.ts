@@ -4,6 +4,7 @@ import { type StoryStep, storyStepSchema } from "~/core/models";
 import { parseMarkdown, toMarkdown } from "../state/markdown";
 import { toStep } from "../state/reducer";
 import type { Block } from "../state/types";
+import { isMedia } from "./files";
 
 /**
  * What the editor puts in the clipboard and reads from it. Blocks travel twice: as Markdown
@@ -31,10 +32,10 @@ function fresh(step: StoryStep): Block {
 export type Pasted =
   | { kind: "blocks"; blocks: Block[] }
   | { kind: "text"; text: string }
-  | { kind: "images"; files: File[] }
+  | { kind: "media"; files: File[] }
   | { kind: "nothing" };
 
-/** What a paste brings, in order of preference: our steps, pictures, then plain text. */
+/** What a paste brings, in order of preference: our steps, pictures and videos, then plain text. */
 export function readClipboard(clipboard: ClipboardReader): Pasted {
   const raw = clipboard.getData(STEPS_MIME);
   if (raw) {
@@ -48,8 +49,8 @@ export function readClipboard(clipboard: ClipboardReader): Pasted {
     }
   }
 
-  const images = Array.from(clipboard.files ?? []).filter((file) => file.type.startsWith("image/"));
-  if (images.length > 0) return { kind: "images", files: images };
+  const media = Array.from(clipboard.files ?? []).filter(isMedia);
+  if (media.length > 0) return { kind: "media", files: media };
 
   const text = clipboard.getData("text/plain");
   return text ? { kind: "text", text } : { kind: "nothing" };

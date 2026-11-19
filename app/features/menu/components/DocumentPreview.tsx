@@ -12,7 +12,7 @@ import { cn } from "~/core/ui";
 
 /**
  * The first lines of a document, drawn on its card. Read-only and small: text, headings,
- * checkboxes, list items, code, images and dividers. Blocks with nothing to show are skipped.
+ * checkboxes, list items, code, images, videos and dividers. Blocks with nothing to show are skipped.
  */
 
 const HEADING_CLASSES: Record<string, string> = {
@@ -32,6 +32,7 @@ export function isPreviewable(step: StoryStep): boolean {
     case "TITLE":
       return false;
     case "IMAGE":
+    case "VIDEO":
       return step.url !== null && step.url !== "";
     case "DIVIDER":
       return true;
@@ -126,6 +127,16 @@ function PreviewStep({ step }: { step: StoryStep }) {
           src={step.url ?? ""}
           alt=""
           loading="lazy"
+          className="max-h-32 w-full rounded-sm object-cover"
+        />
+      );
+    case "VIDEO":
+      return (
+        <video
+          src={step.url ?? ""}
+          muted
+          preload="metadata"
+          aria-hidden
           className="max-h-32 w-full rounded-sm object-cover"
         />
       );

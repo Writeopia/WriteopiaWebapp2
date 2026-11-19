@@ -4,8 +4,11 @@ import type { Block, Caret } from "../state/types";
 
 /** What the blocks ask of the editor around them: the work that needs the backend or a dialog. */
 export type EditorActions = {
-  /** Uploads pictures and adds them as image blocks after the block with [afterId]. */
-  insertImages: (files: File[], afterId?: string | null) => void;
+  /**
+   * Uploads pictures and videos and adds them as image and video blocks after the block with
+   * [afterId].
+   */
+  insertMedia: (files: File[], afterId?: string | null) => void;
   /** Asks for the address of a link on [caret], the selected text. */
   openLinkDialog: (caret: Caret) => void;
   /** Writes a new document next to this one and adds a link to it. */

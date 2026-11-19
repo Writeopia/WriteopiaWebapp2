@@ -20,7 +20,7 @@ import { menuKeys, newDocument } from "~/features/menu/queries";
 import { TopBar } from "~/features/shell/components/TopBar";
 import { useWorkspace } from "~/features/workspaces/WorkspaceContext";
 
-import { describeLinkCard, uploadImage } from "../api";
+import { describeLinkCard, uploadMedia } from "../api";
 import { isTitle, newBlock, textOf } from "../state/blocks";
 import { find, ordered } from "../state/reducer";
 import { linkAt, sliceSpans } from "../state/spans";
@@ -101,31 +101,37 @@ export function DocumentEditor({ document, navigation }: DocumentEditorProps) {
 
   const actions = useMemo<EditorActions>(
     () => ({
-      insertImages: (files, afterId) => {
+      insertMedia: (files, afterId) => {
         let after = afterId;
         for (const file of files) {
           const { dispatch, setUploading } = store.getState();
-          const image: Block = { ...newBlock(StoryTypes.IMAGE, { text: null }), ephemeral: true };
+          const video = file.type.startsWith("video/");
+          const media: Block = {
+            ...newBlock(video ? StoryTypes.VIDEO : StoryTypes.IMAGE, { text: null }),
+            ephemeral: true,
+          };
           const preview = URL.createObjectURL(file);
-          setUploading(image.id, preview);
-          dispatch({ type: "insertBlocks", blocks: [image], afterId: after });
-          after = image.id;
+          setUploading(media.id, preview);
+          dispatch({ type: "insertBlocks", blocks: [media], afterId: after });
+          after = media.id;
 
-          uploadImage(file, file.name)
+          uploadMedia(file, file.name)
             .then((url) => {
               store
                 .getState()
                 .dispatch(
-                  { type: "updateBlock", id: image.id, changes: { url, ephemeral: false } },
+                  { type: "updateBlock", id: media.id, changes: { url, ephemeral: false } },
                   { history: false },
                 );
             })
             .catch(() => {
-              store.getState().dispatch({ type: "removeBlock", id: image.id }, { history: false });
-              showToast(t("editorImageUploadFailed"), { kind: "error" });
+              store.getState().dispatch({ type: "removeBlock", id: media.id }, { history: false });
+              showToast(t(video ? "editorVideoUploadFailed" : "editorImageUploadFailed"), {
+                kind: "error",
+              });
             })
             .finally(() => {
-              store.getState().setUploading(image.id, null);
+              store.getState().setUploading(media.id, null);
               URL.revokeObjectURL(preview);
             });
         }

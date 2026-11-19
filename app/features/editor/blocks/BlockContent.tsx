@@ -1,4 +1,4 @@
-import { ExternalLink, FileText, ImageOff } from "lucide-react";
+import { ExternalLink, FileText, ImageOff, VideoOff } from "lucide-react";
 import { useContext } from "react";
 
 import { t } from "~/core/i18n";
@@ -129,6 +129,9 @@ export function BlockContent({ block, readOnly, decorations }: BlockContentProps
     case "IMAGE":
       return <ImageBlock block={block} />;
 
+    case "VIDEO":
+      return <VideoBlock block={block} />;
+
     case "DOCUMENT_LINK":
       return <DocumentLinkBlock block={block} />;
 
@@ -206,6 +209,39 @@ function ImageBlock({ block }: { block: Block }) {
       {preview && (
         <div className="absolute inset-0 flex items-center justify-center" role="status">
           <Spinner label={t("editorImageUploading")} />
+        </div>
+      )}
+    </figure>
+  );
+}
+
+function VideoBlock({ block }: { block: Block }) {
+  const preview = useEditor((store) => store.uploading.get(block.id));
+  const source = preview ?? block.url;
+
+  if (!source) {
+    return (
+      <div className="my-1 flex items-center gap-2 rounded-md bg-light-bg px-3 py-6 text-sm text-text-lighter">
+        <VideoOff size={16} aria-hidden />
+        {t("editorVideoMissing")}
+      </div>
+    );
+  }
+  return (
+    <figure className="relative my-1">
+      {/* An uploaded video comes without captions to add. */}
+      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+      <video
+        src={source}
+        controls={!preview}
+        preload="metadata"
+        draggable={false}
+        aria-label={textOf(block) || t("editorVideo")}
+        className={cn("max-h-[32rem] max-w-full rounded-md", preview && "opacity-60")}
+      />
+      {preview && (
+        <div className="absolute inset-0 flex items-center justify-center" role="status">
+          <Spinner label={t("editorVideoUploading")} />
         </div>
       )}
     </figure>

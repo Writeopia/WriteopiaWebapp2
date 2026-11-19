@@ -15,6 +15,7 @@ import {
   Square,
   SquareDashed,
   Undo2,
+  Video,
 } from "lucide-react";
 import { useRef } from "react";
 
@@ -22,6 +23,7 @@ import { t } from "~/core/i18n";
 import { StoryTypes, Tags } from "~/core/models";
 import { Menu, type MenuItem } from "~/core/ui";
 
+import { pickFiles } from "../dom/files";
 import { targetIds } from "../state/reducer";
 import { useEditor } from "../state/store";
 import type { SyncStatus } from "../sync/stepSync";
@@ -41,7 +43,7 @@ export function EditorToolbar({ status, onRetry }: { status: SyncStatus; onRetry
   const undo = useEditor((store) => store.undo);
   const redo = useEditor((store) => store.redo);
   const setSearch = useEditor((store) => store.setSearch);
-  const { insertImages, addPage } = useEditorActions();
+  const { insertMedia, addPage } = useEditorActions();
   const fileInput = useRef<HTMLInputElement>(null);
 
   const items: MenuItem[] = [
@@ -111,7 +113,13 @@ export function EditorToolbar({ status, onRetry }: { status: SyncStatus; onRetry
       id: "image",
       label: t("editorImage"),
       icon: <Image size={16} />,
-      onSelect: () => fileInput.current?.click(),
+      onSelect: () => pickFiles(fileInput.current, "image/*"),
+    },
+    {
+      id: "video",
+      label: t("editorVideo"),
+      icon: <Video size={16} />,
+      onSelect: () => pickFiles(fileInput.current, "video/*"),
     },
     {
       id: "page",
@@ -162,7 +170,7 @@ export function EditorToolbar({ status, onRetry }: { status: SyncStatus; onRetry
             onChange={(event) => {
               const files = Array.from(event.target.files ?? []);
               event.target.value = "";
-              if (files.length > 0) insertImages(files);
+              if (files.length > 0) insertMedia(files);
             }}
           />
         </>

@@ -40,7 +40,7 @@ export function ReadOnlyDocument({
 
   const actions = useMemo<EditorActions>(
     () => ({
-      insertImages: noop,
+      insertMedia: noop,
       openLinkDialog: noop,
       addPage: noop,
       openDocument,

@@ -64,6 +64,8 @@ function line(step: StoryStep): string | null {
       return "---";
     case StoryTypes.IMAGE.number:
       return step.url ? `![](${step.url})` : null;
+    case StoryTypes.VIDEO.number:
+      return step.url ? `[video](${step.url})` : null;
     case StoryTypes.LINK_CARD.number: {
       const url = step.url ?? "";
       return `[${step.text?.trim() ? step.text : url}](${url})`;

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { AI_TIMEOUT_MS, api } from "~/core/api";
 import { type StoryStep, storyStepSchema } from "~/core/models";
 
-/** The endpoints of the editor: step sync, image upload, link card description. */
+/** The endpoints of the editor: step sync, media upload, link card description. */
 
 function documentPath(workspaceId: string, documentId: string): string {
   return `/docs/workspace/${encodeURIComponent(workspaceId)}/document/${encodeURIComponent(documentId)}`;
@@ -45,8 +45,11 @@ export function syncSteps(
 
 const uploadResponseSchema = z.object({ imageUrl: z.string() });
 
-/** Stores a picture and answers the address it is served at. */
-export async function uploadImage(file: Blob, name = "image"): Promise<string> {
+/**
+ * Stores a picture or a video and answers the address it is served at. The backend takes any
+ * file under the "image" field and keeps its type.
+ */
+export async function uploadMedia(file: Blob, name = "media"): Promise<string> {
   const body = new FormData();
   body.append("image", file, name);
   const response = await api.post("/media/upload", body, uploadResponseSchema);

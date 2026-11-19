@@ -26,7 +26,7 @@ export type EditorStore = {
   canUndo: boolean;
   canRedo: boolean;
   search: SearchState;
-  /** Image blocks being uploaded: their id and a local address of the picture meanwhile. */
+  /** Image and video blocks being uploaded: their id and a local address of the file meanwhile. */
   uploading: ReadonlyMap<string, string>;
   /** Link cards whose description is being written, by id. */
   describing: ReadonlySet<string>;

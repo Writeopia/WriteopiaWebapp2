@@ -237,6 +237,23 @@ test("a pasted picture is uploaded and saved as an image block", async ({ page }
     .toContain("https://images.example/1.png");
 });
 
+test("a pasted video is uploaded and saved as a video block", async ({ page }) => {
+  const backend = twoLines();
+  await open(page, backend);
+
+  await block(page, "Second").click();
+  await paste(page, {}, [{ name: "clip.mp4", type: "video/mp4" }]);
+  await expect(page.locator("figure video")).toHaveAttribute("src", "https://images.example/1.mp4");
+  await expect
+    .poll(() =>
+      backend
+        .ordered()
+        .filter((each) => each.url === "https://images.example/1.mp4")
+        .map((each) => (each.type as { number: number }).number),
+    )
+    .toEqual([6]);
+});
+
 test("blocks are selected with Shift+arrows, copied, and deleted", async ({ page }) => {
   const backend = twoLines();
   await open(page, backend);
