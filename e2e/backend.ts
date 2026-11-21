@@ -92,6 +92,9 @@ export class FakeBackend {
     const json = (body: unknown, status = 200) => route.fulfill({ status, json: body });
 
     if (path === "/auth/user/current") return json(user);
+    if (path === "/auth/subscription") {
+      return json({ premium: true, tier: "PREMIUM", monthlyPriceCents: 499, currency: "USD" });
+    }
     if (path === "/auth/session/status") return json({ authenticated: true });
     if (path === "/workspace/user") return json([workspace]);
     if (path === `${docs}/user/favorites`) return json([]);

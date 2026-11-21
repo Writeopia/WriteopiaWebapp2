@@ -2,7 +2,16 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { Button, Dialog, Menu, showToast, TextField, Toaster, useToastStore } from "./index";
+import {
+  Button,
+  Dialog,
+  Menu,
+  PasswordField,
+  showToast,
+  TextField,
+  Toaster,
+  useToastStore,
+} from "./index";
 
 afterEach(() => useToastStore.setState({ toasts: [] }));
 
@@ -30,6 +39,21 @@ describe("Button", () => {
     expect(button).toBeDisabled();
     expect(button).toHaveAttribute("aria-busy", "true");
     expect(onClick).not.toHaveBeenCalled();
+  });
+});
+
+describe("PasswordField", () => {
+  it("reveals and hides the password", async () => {
+    render(<PasswordField label="Password" defaultValue="secret" />);
+
+    const input = screen.getByLabelText("Password");
+    expect(input).toHaveAttribute("type", "password");
+
+    await userEvent.click(screen.getByRole("button", { name: "Show password" }));
+    expect(input).toHaveAttribute("type", "text");
+
+    await userEvent.click(screen.getByRole("button", { name: "Hide password" }));
+    expect(input).toHaveAttribute("type", "password");
   });
 });
 

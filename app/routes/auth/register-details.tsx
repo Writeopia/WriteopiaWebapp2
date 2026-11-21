@@ -5,7 +5,7 @@ import { Navigate, useNavigate } from "react-router";
 import { ApiError } from "~/core/api";
 import { useDebouncedValue } from "~/core/hooks/useDebouncedValue";
 import { t } from "~/core/i18n";
-import { Button, TextField } from "~/core/ui";
+import { Button, PasswordField, TextField } from "~/core/ui";
 import {
   getLegalDocument,
   isUsernameAvailable,
@@ -138,9 +138,8 @@ export default function RegisterDetails() {
           value={workspaceName}
           onChange={(event) => setWorkspaceName(event.target.value)}
         />
-        <TextField
+        <PasswordField
           label={t("password")}
-          type="password"
           autoComplete="new-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}

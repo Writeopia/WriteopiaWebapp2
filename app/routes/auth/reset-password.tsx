@@ -10,9 +10,9 @@ import {
   isNewPasswordValid,
   NewPasswordFields,
 } from "~/features/auth/components/NewPasswordFields";
-import { paths, requireSession } from "~/features/auth/session";
+import { paths, requireSignedIn } from "~/features/auth/session";
 
-export const clientLoader = requireSession;
+export const clientLoader = requireSignedIn;
 
 /** Changes the password of the signed-in user. */
 export default function ResetPassword() {
