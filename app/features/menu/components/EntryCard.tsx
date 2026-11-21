@@ -99,7 +99,9 @@ export function EntryCard({
         className={cn(
           "absolute left-3 flex size-4",
           isList ? "top-1/2 -translate-y-1/2" : "top-3",
-          !selected && !selecting && "opacity-0 group-hover:opacity-100 has-focus-visible:opacity-100",
+          !selected &&
+            !selecting &&
+            "opacity-0 group-hover:opacity-100 has-focus-visible:opacity-100",
         )}
       >
         <input

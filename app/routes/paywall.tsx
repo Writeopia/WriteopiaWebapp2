@@ -1,8 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { CloudUpload, Download, type LucideIcon,RefreshCw, Sparkles, Users } from "lucide-react";
+import { CloudUpload, Download, type LucideIcon, RefreshCw, Sparkles, Users } from "lucide-react";
 import { redirect, useNavigate } from "react-router";
 
-import { type StringKey,t } from "~/core/i18n";
+import { type StringKey, t } from "~/core/i18n";
 import { Button, buttonClasses } from "~/core/ui";
 import { AuthCard, FormError } from "~/features/auth/components/AuthCard";
 import { APPS_DOWNLOAD_URL, formatMonthlyPrice } from "~/features/auth/paywall";
