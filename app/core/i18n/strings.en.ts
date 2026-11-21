@@ -107,8 +107,19 @@ export const en = {
   // Paywall
   paywallTitle: "Subscribe to Writeopia",
   paywallDescription:
-    "A subscription is needed to use your Writeopia cloud account: your documents synced and available on every device and on the web.",
+    "Your account is ready. Subscribe to get everything the Writeopia cloud offers:",
   paywallPrice: "{price} per month",
+  paywallBenefitSync: "Sync across all platforms",
+  paywallBenefitSyncDescription:
+    "Write on your computer and keep going on your phone, tablet or the web. Your documents are always up to date, everywhere.",
+  paywallBenefitAi: "Cloud AI",
+  paywallBenefitAiDescription:
+    "Writing suggestions, commands on your text, summaries and header pictures, with nothing to install.",
+  paywallBenefitTeam: "Work as a team",
+  paywallBenefitTeamDescription: "Share workspaces and write together with your team.",
+  paywallBenefitBackup: "Safe in the cloud",
+  paywallBenefitBackupDescription:
+    "Your documents are backed up, so nothing is lost with a device.",
   paywallCheckAgain: "I've subscribed – check again",
   paywallNotSubscribed: "We couldn't find a subscription for this account yet.",
   paywallCheckFailed: "Could not check your subscription. Please try again.",

@@ -1,8 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Download } from "lucide-react";
+import { CloudUpload, Download, type LucideIcon,RefreshCw, Sparkles, Users } from "lucide-react";
 import { redirect, useNavigate } from "react-router";
 
-import { t } from "~/core/i18n";
+import { type StringKey,t } from "~/core/i18n";
 import { Button, buttonClasses } from "~/core/ui";
 import { AuthCard, FormError } from "~/features/auth/components/AuthCard";
 import { APPS_DOWNLOAD_URL, formatMonthlyPrice } from "~/features/auth/paywall";
@@ -14,6 +14,18 @@ import {
   subscriptionQuery,
 } from "~/features/auth/session";
 import { useLogout } from "~/features/auth/useLogout";
+
+/** What the subscription brings: the reasons to subscribe. */
+const BENEFITS: { icon: LucideIcon; title: StringKey; description: StringKey }[] = [
+  { icon: RefreshCw, title: "paywallBenefitSync", description: "paywallBenefitSyncDescription" },
+  { icon: Sparkles, title: "paywallBenefitAi", description: "paywallBenefitAiDescription" },
+  { icon: Users, title: "paywallBenefitTeam", description: "paywallBenefitTeamDescription" },
+  {
+    icon: CloudUpload,
+    title: "paywallBenefitBackup",
+    description: "paywallBenefitBackupDescription",
+  },
+];
 
 /** Needs a session; someone who already has a subscription goes on to the app. */
 export async function clientLoader() {
@@ -60,8 +72,21 @@ export default function Paywall() {
     >
       <div className="flex flex-col gap-2 text-center">
         <p className="text-sm text-text-light">{t("paywallDescription")}</p>
-        {price && <p className="text-lg font-semibold">{t("paywallPrice", { price })}</p>}
       </div>
+
+      <ul className="flex flex-col gap-4">
+        {BENEFITS.map(({ icon: Icon, title, description }) => (
+          <li key={title} className="flex items-start gap-3">
+            <Icon size={20} className="mt-0.5 shrink-0 text-link" aria-hidden />
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold">{t(title)}</span>
+              <span className="text-sm text-text-light">{t(description)}</span>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      {price && <p className="text-center text-lg font-semibold">{t("paywallPrice", { price })}</p>}
 
       {failed && (
         <div className="flex flex-col items-center gap-3">
