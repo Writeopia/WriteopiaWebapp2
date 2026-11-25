@@ -29,6 +29,8 @@ export const en = {
   create: "Create",
   email: "Email",
   password: "Password",
+  showPassword: "Show password",
+  hidePassword: "Hide password",
   name: "Name",
   username: "Username",
 
@@ -106,6 +108,31 @@ export const en = {
   roleAdmin: "Admin",
   roleEditor: "Editor",
   changeWorkspace: "Change workspace",
+
+  // Paywall
+  paywallTitle: "Subscribe to Writeopia",
+  paywallDescription:
+    "Your account is ready. Subscribe to get everything the Writeopia cloud offers:",
+  paywallPrice: "{price} per month",
+  paywallBenefitSync: "Sync across all platforms",
+  paywallBenefitSyncDescription:
+    "Write on your computer and keep going on your phone, tablet or the web. Your documents are always up to date, everywhere.",
+  paywallBenefitAi: "Cloud AI",
+  paywallBenefitAiDescription:
+    "Writing suggestions, commands on your text, summaries and header pictures, with nothing to install.",
+  paywallBenefitTeam: "Work as a team",
+  paywallBenefitTeamDescription: "Share workspaces and write together with your team.",
+  paywallBenefitBackup: "Safe in the cloud",
+  paywallBenefitBackupDescription:
+    "Your documents are backed up, so nothing is lost with a device.",
+  paywallCheckAgain: "I've subscribed – check again",
+  paywallNotSubscribed: "We couldn't find a subscription for this account yet.",
+  paywallCheckFailed: "Could not check your subscription. Please try again.",
+  paywallTryAppsTitle: "Try Writeopia for free",
+  paywallTryAppsDescription:
+    "The desktop and mobile apps have a free offline space: your documents stay on your device and no account is needed.",
+  paywallDownloadApps: "Download the apps",
+  paywallSignOut: "Sign out",
 
   // Account
   logout: "Logout",

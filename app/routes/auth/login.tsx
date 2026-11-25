@@ -3,7 +3,7 @@ import { type FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router";
 
 import { t } from "~/core/i18n";
-import { Button, TextField } from "~/core/ui";
+import { Button, PasswordField, TextField } from "~/core/ui";
 import {
   type GoogleLoginResult,
   type GoogleSignUp,
@@ -93,9 +93,8 @@ export default function Login() {
           value={identifier}
           onChange={(event) => setIdentifier(event.target.value)}
         />
-        <TextField
+        <PasswordField
           label={t("password")}
-          type="password"
           autoComplete="current-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}

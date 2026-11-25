@@ -17,6 +17,7 @@ export default [
   route("auth/reset-password", "routes/auth/reset-password.tsx"),
   route("workspaces", "routes/workspaces.tsx"),
   route("account-deletion-started", "routes/account-deletion-started.tsx"),
+  route("subscribe", "routes/paywall.tsx"),
   route("site/:documentId", "routes/site.tsx"),
 
   route("app", "routes/app/layout.tsx", [

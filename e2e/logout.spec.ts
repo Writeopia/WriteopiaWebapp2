@@ -29,7 +29,7 @@ test("signing out from the settings opens the login", async ({ page }) => {
   await page.getByRole("button", { name: "Logout" }).click();
 
   await expect(page).toHaveURL(/\/auth\/login$/);
-  await expect(page.getByLabel("Password")).toBeVisible();
+  await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
   // The login asks once who is signed in (twice under StrictMode), not in a loop.
   expect(sessionChecks).toBeLessThanOrEqual(2);
 });
