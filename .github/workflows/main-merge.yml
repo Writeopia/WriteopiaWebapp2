@@ -22,6 +22,8 @@ jobs:
       GCS_BUCKET: ${{ vars.GCS_BUCKET }}
       # The load balancer whose CDN cache holds index.html.
       CDN_URL_MAP: ${{ vars.CDN_URL_MAP }}
+      # The Web OAuth client of Google sign-in (public). Until it is set, the button is hidden.
+      VITE_GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID }}
     steps:
       - name: Check out code
         uses: actions/checkout@v7

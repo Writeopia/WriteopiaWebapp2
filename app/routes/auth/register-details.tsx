@@ -16,6 +16,7 @@ import {
 import { AuthCard, FormError } from "~/features/auth/components/AuthCard";
 import { LegalDocumentDialog } from "~/features/auth/components/LegalDocumentDialog";
 import { PasswordStrength } from "~/features/auth/components/PasswordStrength";
+import { TermsAgreement } from "~/features/auth/components/TermsAgreement";
 import { useRegisterFlow } from "~/features/auth/flows";
 import { isValidUsername, validatePassword } from "~/features/auth/password";
 import { paths, setSessionUser } from "~/features/auth/session";
@@ -147,34 +148,11 @@ export default function RegisterDetails() {
         />
         <PasswordStrength validation={passwordValidation} />
 
-        <div className="flex items-start gap-2 text-sm">
-          <input
-            id="terms"
-            type="checkbox"
-            className="mt-1 accent-accent"
-            checked={termsAccepted}
-            onChange={(event) => setTermsAccepted(event.target.checked)}
-            aria-label={`${t("termsAgreePrefix")} ${t("termsOfService")} ${t("termsAgreeAnd")} ${t("privacyPolicy")}`}
-          />
-          <p>
-            <label htmlFor="terms">{t("termsAgreePrefix")}</label>{" "}
-            <button
-              type="button"
-              className="text-link underline"
-              onClick={() => setLegalDocument("terms")}
-            >
-              {t("termsOfService")}
-            </button>{" "}
-            {t("termsAgreeAnd")}{" "}
-            <button
-              type="button"
-              className="text-link underline"
-              onClick={() => setLegalDocument("privacy")}
-            >
-              {t("privacyPolicy")}
-            </button>
-          </p>
-        </div>
+        <TermsAgreement
+          accepted={termsAccepted}
+          onAcceptedChange={setTermsAccepted}
+          onOpenDocument={setLegalDocument}
+        />
 
         <FormError message={error} />
         <Button type="submit" loading={signUp.isPending} disabled={!canRegister}>
