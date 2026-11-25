@@ -58,6 +58,11 @@ export const en = {
   codeSent: "Confirmation code sent!",
   invalidCode: "Invalid or expired code. Please try again.",
   usernameTaken: "This username is already taken",
+  orContinueWith: "or",
+  googleSignUpTitle: "Choose your username",
+  googleSignUpMessage:
+    "This is the first time {email} signs in to Writeopia. Pick a username to create your account.",
+  googleSignInFailed: "Google sign-in failed. Try again.",
   usernameAvailable: "This username is available",
   usernameRules: "3 to 30 letters, digits, - or _",
   workspaceName: "Workspace name",

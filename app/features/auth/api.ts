@@ -73,6 +73,56 @@ export async function login(identifier: string, password: string): Promise<Login
   }
 }
 
+const googleSignUpSchema = z.object({
+  idToken: z.string(),
+  email: z.string(),
+  name: z.string(),
+  suggestedUsername: z.string(),
+});
+
+/** A Google account with no Writeopia account yet: what the sign-up step starts from. */
+export type GoogleSignUp = z.infer<typeof googleSignUpSchema>;
+
+export type GoogleLoginResult =
+  | LoginResult
+  /** No account yet: ask for a username and the Terms, then send the token back. */
+  | { kind: "signUpRequired"; signUp: GoogleSignUp }
+  | { kind: "usernameTaken" };
+
+export type GoogleLoginRequest = {
+  /** The Google ID token: from Google's button, or [GoogleSignUp.idToken] when signing up. */
+  idToken: string;
+  username?: string;
+  acceptedLegalVersion?: string;
+};
+
+/**
+ * Signs in with a Google ID token. On success the backend sets the session cookies. The first
+ * sign-in of a Google account answers [signUpRequired]; sent again with a username and the
+ * legal version, it creates the account.
+ */
+export async function loginWithGoogle(request: GoogleLoginRequest): Promise<GoogleLoginResult> {
+  try {
+    const response = await api.post(
+      "/auth/login/google/web",
+      request,
+      authResponseSchema,
+      noRenewal,
+    );
+
+    return { kind: response.enabled ? "signedIn" : "unconfirmed", user: response.writeopiaUser };
+  } catch (error) {
+    if (!(error instanceof ApiError)) throw error;
+    if (error.status === 422) {
+      return { kind: "signUpRequired", signUp: googleSignUpSchema.parse(JSON.parse(error.body)) };
+    }
+    if (error.isConflict && request.username !== undefined) return { kind: "usernameTaken" };
+    if (error.isUnauthorized) return { kind: "invalidCredentials" };
+    if (error.isForbidden) return { kind: "deletionPending" };
+    throw error;
+  }
+}
+
 /** Ends the session: the backend revokes the refresh token and clears the cookies. */
 export function logout(): Promise<void> {
   return api.send("POST", "/auth/logout/web", undefined, noRenewal);
