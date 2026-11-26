@@ -98,7 +98,14 @@ export function GoogleSignInButton({ onCredential, onError }: GoogleSignInButton
   }, []);
 
   if (!googleWebClientId) return null;
+  // Google draws the button inside an iframe whose document is light. When the iframe's
+  // color-scheme differs from the page's (dark theme), the browser paints an opaque white
+  // backdrop behind it; matching it to light keeps the iframe transparent.
   return (
-    <div ref={container} className="flex w-full justify-center" data-testid="google-sign-in" />
+    <div
+      ref={container}
+      className="flex w-full justify-center [color-scheme:light]"
+      data-testid="google-sign-in"
+    />
   );
 }
